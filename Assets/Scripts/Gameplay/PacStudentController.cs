@@ -126,7 +126,7 @@ public class PacStudentController : MonoBehaviour
         // 如果回到起点，重新开始循环
         if (currentPathIndex == 0)
         {
-            Debug.Log("PacStudent completed one full cycle!");
+            // Debug.Log("PacStudent completed one full cycle!");
         }
     }
     
@@ -152,7 +152,7 @@ public class PacStudentController : MonoBehaviour
             if (audioManager != null)
             {
                 audioManager.PlayMoveSFX();
-                Debug.Log($"Played move sound at path index: {currentPathIndex}, grid position: {gridPathPoints[currentPathIndex]}");
+                //Debug.Log($"Played move sound at path index: {currentPathIndex}, grid position: {gridPathPoints[currentPathIndex]}");
             }
             lastPlayedPathIndex = currentPathIndex;
         }
@@ -242,7 +242,7 @@ public class PacStudentController : MonoBehaviour
             animator.SetInteger("MoveY", moveY);
             
             // 调试输出
-            Debug.Log($"Animation: MoveX={moveX}, MoveY={moveY}, PathIndex={currentPathIndex}");
+            //Debug.Log($"Animation: MoveX={moveX}, MoveY={moveY}, PathIndex={currentPathIndex}");
         }
     }
     
@@ -253,17 +253,17 @@ public class PacStudentController : MonoBehaviour
         if (other.CompareTag("Pellet"))
         {
             // 吃豆逻辑
-            Debug.Log("Ate a pellet!");
+            // Debug.Log("Ate a pellet!");
         }
         else if (other.CompareTag("PowerPellet"))
         {
             // 吃能量豆逻辑
-            Debug.Log("Ate a power pellet!");
+            // Debug.Log("Ate a power pellet!");
         }
         else if (other.CompareTag("Wall"))
         {
             // 撞墙逻辑
-            Debug.Log("Hit a wall!");
+            // Debug.Log("Hit a wall!");
         }
     }
     
