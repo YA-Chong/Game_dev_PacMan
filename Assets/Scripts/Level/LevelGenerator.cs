@@ -19,6 +19,9 @@ public class LevelGenerator : MonoBehaviour
     public float tileSize = 1f; // 每个格子的尺寸
     public Transform levelParent; // 关卡父对象
     
+    [Header("Static Level Management")]
+    public GameObject[] staticLevelObjects; // 静态关卡对象数组
+    
     // levelMap 2D数组 - 左上象限
     private int[,] levelMap = new int[,]
     {
@@ -41,6 +44,9 @@ public class LevelGenerator : MonoBehaviour
     
     void Start()
     {
+        // 隐藏静态地图
+        HideStaticLevel();
+        // 生成程序地图
         GenerateLevel();
     }
     
@@ -566,6 +572,36 @@ public class LevelGenerator : MonoBehaviour
             mainCamera.orthographicSize = requiredSize + 2f; // 加一点边距
             
             // Debug.Log($"Camera kept at (0,0,-10), orthographic size adjusted to {mainCamera.orthographicSize}");
+        }
+    }
+    
+    // 隐藏静态地图
+    private void HideStaticLevel()
+    {
+        if (staticLevelObjects != null)
+        {
+            foreach (GameObject obj in staticLevelObjects)
+            {
+                if (obj != null)
+                {
+                    obj.SetActive(false);
+                }
+            }
+        }
+    }
+    
+    // 显示静态地图（用于编辑器或调试）
+    public void ShowStaticLevel()
+    {
+        if (staticLevelObjects != null)
+        {
+            foreach (GameObject obj in staticLevelObjects)
+            {
+                if (obj != null)
+                {
+                    obj.SetActive(true);
+                }
+            }
         }
     }
 }
