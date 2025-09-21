@@ -57548,10 +57548,10 @@ MonoBehaviour:
   staticLevelObjects:
   - {fileID: 1417642202}
   - {fileID: 119482856}
-  - {fileID: 874079328}
-  - {fileID: 1532639766}
   - {fileID: 237719003}
   - {fileID: 805738292}
+  - {fileID: 874079328}
+  - {fileID: 1532639766}
   - {fileID: 985417261}
   - {fileID: 1886920642}
 --- !u!4 &2057442327

@@ -3,26 +3,24 @@ using UnityEngine;
 public class LevelGenerator : MonoBehaviour
 {
     [Header("Sprites")]
-    public Sprite tiles_0; // 空地板
-    public Sprite tiles_1; // 外角
-    public Sprite tiles_2; // 外壁
-    public Sprite tiles_3; // 内角
-    public Sprite tiles_4; // 内壁
-    public Sprite tiles_5; // T型连接
-    public Sprite tiles_6; // 幽灵出口墙
+    public Sprite tiles_0;
+    public Sprite tiles_1;
+    public Sprite tiles_2;
+    public Sprite tiles_3;
+    public Sprite tiles_4;
+    public Sprite tiles_5;
+    public Sprite tiles_6;
     
     [Header("Prefabs")]
-    public GameObject beanS; // 标准豆子
-    public GameObject beanM; // 能量豆
+    public GameObject beanS;
+    public GameObject beanM;
     
     [Header("Settings")]
-    public float tileSize = 1f; // 每个格子的尺寸
-    public Transform levelParent; // 关卡父对象
+    public float tileSize = 1f;
+    public Transform levelParent;
     
     [Header("Static Level Management")]
-    public GameObject[] staticLevelObjects; // 静态关卡对象数组
-    
-    // levelMap 2D数组 - 左上象限
+    public GameObject[] staticLevelObjects;
     private int[,] levelMap = new int[,]
     {
         {1,2,2,2,2,2,2,2,2,2,2,2,2,7},
@@ -44,61 +42,38 @@ public class LevelGenerator : MonoBehaviour
     
     void Start()
     {
-        // 隐藏静态地图
         HideStaticLevel();
-        // 生成程序地图
         GenerateLevel();
     }
     
     public void GenerateLevel()
     {
-        // 删除现有的Level 01
         DeleteExistingLevel();
         
-        // 创建关卡父对象
         if (levelParent == null)
         {
             GameObject levelParentObj = new GameObject("Generated Level");
             levelParent = levelParentObj.transform;
         }
         
-        // 获取数组尺寸
         int rows = levelMap.GetLength(0);
         int cols = levelMap.GetLength(1);
         
-        // 重新计算位置：相机(0,0)应该和topleft的右下角对齐
-        // 手动调整0.5偏移，向右下移动0.5
         float startX = -cols + 0.5f;
         float startY = -rows + 0.5f;
         
-        // 生成左上象限（原始）
-        // Debug.Log($"Generating TopLeft at ({startX}, {startY})");
-        // Debug.Log($"TopLeft右下角应该在: ({startX + cols}, {startY - rows}) = ({startX + cols}, {startY - rows})");
-        // Debug.Log($"Original map[0,0] = {levelMap[0,0]}, should be 1 (outside corner)");
         GenerateQuadrant(levelMap, startX, startY, "TopLeft");
         
-        // 生成右上象限（水平镜像）
         int[,] topRightMap = MirrorHorizontally(levelMap);
-        // Debug.Log($"TopRight map[0,0] = {topRightMap[0,0]}, should be 7 (T-junction)");
-        // Debug.Log($"Generating TopRight at ({startX + cols}, {startY})");
         GenerateQuadrant(topRightMap, startX + cols, startY, "TopRight");
         
-        // 生成左下象限（垂直镜像）
         int[,] bottomLeftMap = MirrorVertically(levelMap);
-        // Debug.Log($"BottomLeft map[0,0] = {bottomLeftMap[0,0]}, should be 2 (outside wall)");
-        // Debug.Log($"Generating BottomLeft at ({startX}, {startY + rows})");
         GenerateQuadrant(bottomLeftMap, startX, startY + rows, "BottomLeft");
         
-        // 生成右下象限（水平+垂直镜像）
         int[,] bottomRightMap = MirrorHorizontally(bottomLeftMap);
-        // Debug.Log($"BottomRight map[0,0] = {bottomRightMap[0,0]}, should be 0 (empty)");
-        // Debug.Log($"Generating BottomRight at ({startX + cols}, {startY + rows})");
         GenerateQuadrant(bottomRightMap, startX + cols, startY + rows, "BottomRight");
         
-        // 调整相机
         AdjustCamera(rows, cols);
-        
-        // Debug.Log("Level generation completed!");
     }
     
     private void GenerateQuadrant(int[,] map, float offsetX, float offsetY, string quadrantName)
@@ -106,7 +81,6 @@ public class LevelGenerator : MonoBehaviour
         int rows = map.GetLength(0);
         int cols = map.GetLength(1);
         
-        // 创建象限父对象
         GameObject quadrantParent = new GameObject(quadrantName);
         quadrantParent.transform.SetParent(levelParent);
         
@@ -116,39 +90,35 @@ public class LevelGenerator : MonoBehaviour
             {
                 int tileType = map[row, col];
                 
-                // 计算世界坐标
                 float worldX = (col + offsetX) * tileSize;
-                float worldY = -(row + offsetY) * tileSize; // Y轴向下
+                float worldY = -(row + offsetY) * tileSize;
                 
-                // 每个位置都铺空地板
                 CreateTile(tiles_0, worldX, worldY, 0f, quadrantParent.transform);
-                
-                // 根据类型创建对应的sprite或prefab
                 switch (tileType)
                 {
-                        case 1: // 外角
-                            CreateTile(tiles_1, worldX, worldY, GetRotationAngle(map, row, col, 1, quadrantName), quadrantParent.transform);
+                        case 1:
+                            CreateTile(tiles_1, worldX, worldY, GetRotationAngle(map, row, col, 1, quadrantName), quadrantParent.transform, quadrantName);
                             break;
-                        case 2: // 外壁
-                            CreateTile(tiles_2, worldX, worldY, GetRotationAngle(map, row, col, 2, quadrantName), quadrantParent.transform);
+                        case 2:
+                            CreateTile(tiles_2, worldX, worldY, GetRotationAngle(map, row, col, 2, quadrantName), quadrantParent.transform, quadrantName);
                             break;
-                        case 3: // 内角
-                            CreateTile(tiles_3, worldX, worldY, GetRotationAngle(map, row, col, 3, quadrantName), quadrantParent.transform);
+                        case 3:
+                            CreateTile(tiles_3, worldX, worldY, GetRotationAngle(map, row, col, 3, quadrantName), quadrantParent.transform, quadrantName);
                             break;
-                        case 4: // 内壁
-                            CreateTile(tiles_4, worldX, worldY, GetRotationAngle(map, row, col, 4, quadrantName), quadrantParent.transform);
+                        case 4:
+                            CreateTile(tiles_4, worldX, worldY, GetRotationAngle(map, row, col, 4, quadrantName), quadrantParent.transform, quadrantName);
                             break;
-                        case 5: // 标准豆子
+                        case 5:
                             CreatePrefab(beanS, worldX, worldY, quadrantParent.transform);
                             break;
-                        case 6: // 能量豆
+                        case 6:
                             CreatePrefab(beanM, worldX, worldY, quadrantParent.transform);
                             break;
-                        case 7: // T型连接
-                            CreateTile(tiles_5, worldX, worldY, GetRotationAngle(map, row, col, 7, quadrantName), quadrantParent.transform);
+                        case 7:
+                            CreateTile(tiles_5, worldX, worldY, GetRotationAngle(map, row, col, 7, quadrantName), quadrantParent.transform, quadrantName);
                             break;
-                        case 8: // 幽灵出口墙
-                            CreateTile(tiles_6, worldX, worldY, GetRotationAngle(map, row, col, 8, quadrantName), quadrantParent.transform);
+                        case 8:
+                            CreateTile(tiles_6, worldX, worldY, GetRotationAngle(map, row, col, 8, quadrantName), quadrantParent.transform, quadrantName);
                             break;
                 }
             }
@@ -164,7 +134,40 @@ public class LevelGenerator : MonoBehaviour
         
         SpriteRenderer renderer = tile.AddComponent<SpriteRenderer>();
         renderer.sprite = sprite;
-        renderer.sortingOrder = 0; // 地板和墙块在底层
+        renderer.sortingOrder = 0;    }
+    
+    private void CreateTile(Sprite sprite, float x, float y, float rotation, Transform parent, string quadrantName)
+    {
+        GameObject tile = new GameObject("Tile");
+        tile.transform.SetParent(parent);
+        tile.transform.position = new Vector3(x, y, 0);
+        
+        Quaternion finalRotation = GetQuadrantRotation(rotation, quadrantName);
+        tile.transform.rotation = finalRotation;
+        
+        SpriteRenderer renderer = tile.AddComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        renderer.sortingOrder = 0;    }
+    
+    private Quaternion GetQuadrantRotation(float rotationZ, string quadrantName)
+    {
+        switch (quadrantName)
+        {
+            case "TopLeft":
+                return Quaternion.Euler(0, 0, rotationZ);
+                
+            case "TopRight":
+                return Quaternion.Euler(0, 180, rotationZ);
+                
+            case "BottomLeft":
+                return Quaternion.Euler(180, 0, rotationZ);
+                
+            case "BottomRight":
+                return Quaternion.Euler(180, 180, rotationZ);
+                
+            default:
+                return Quaternion.Euler(0, 0, rotationZ);
+        }
     }
     
     private void CreatePrefab(GameObject prefab, float x, float y, Transform parent)
@@ -172,90 +175,84 @@ public class LevelGenerator : MonoBehaviour
         if (prefab != null)
         {
             GameObject instance = Instantiate(prefab, parent);
-            instance.transform.position = new Vector3(x, y, -1); // Z轴设为-1，确保在墙块前面
+            instance.transform.position = new Vector3(x, y, -1);
             
-            // 确保豆子的SpriteRenderer在正确的层级
             SpriteRenderer renderer = instance.GetComponent<SpriteRenderer>();
             if (renderer != null)
             {
-                renderer.sortingOrder = 1; // 豆子在墙块前面
+                renderer.sortingOrder = 1;
             }
         }
     }
     
     private float GetRotationAngle(int[,] map, int row, int col, int tileType, string quadrantName)
     {
-        // 获取周围格子的信息
-        bool hasTop = IsWall(map, row - 1, col);
-        bool hasBottom = IsWall(map, row + 1, col);
-        bool hasLeft = IsWall(map, row, col - 1);
-        bool hasRight = IsWall(map, row, col + 1);
-        
-        float rotation = 0f;
-        
-        // 根据tile类型和周围情况确定旋转角度
-        switch (tileType)
-        {
-            case 1: // 外角
-                rotation = GetCornerRotation(hasTop, hasBottom, hasLeft, hasRight, true);
-                break;
-            case 2: // 外壁
-                rotation = GetWallRotation(hasTop, hasBottom, hasLeft, hasRight);
-                break;
-            case 3: // 内角
-                rotation = GetCornerRotation(hasTop, hasBottom, hasLeft, hasRight, false);
-                break;
-            case 4: // 内壁
-                rotation = GetWallRotation(hasTop, hasBottom, hasLeft, hasRight);
-                break;
-            case 7: // T型连接
-                rotation = GetTJunctionRotation(hasTop, hasBottom, hasLeft, hasRight);
-                break;
-            case 8: // 幽灵出口墙
-                rotation = GetWallRotation(hasTop, hasBottom, hasLeft, hasRight);
-                break;
-            default:
-                rotation = 0f;
-                break;
-        }
-        
-        // 特殊处理：根据具体情况调整旋转角度（只处理TopLeft象限）
         if (quadrantName == "TopLeft")
         {
-            // T型区域拐角的特殊处理（4个连接的情况）
-            if (tileType == 3 && hasTop && hasBottom && hasLeft && hasRight)
+            bool hasTop = IsWall(map, row - 1, col);
+            bool hasBottom = IsWall(map, row + 1, col);
+            bool hasLeft = IsWall(map, row, col - 1);
+            bool hasRight = IsWall(map, row, col + 1);
+            
+            float rotation = 0f;
+            switch (tileType)
             {
-                if (row == 9 && col == 8)
-                    rotation = 90f;
-                else if (row == 10 && col == 8)
+                case 1:
+                    rotation = GetCornerRotation(hasTop, hasBottom, hasLeft, hasRight, true);
+                    break;
+                case 2:
+                    rotation = GetWallRotation(hasTop, hasBottom, hasLeft, hasRight);
+                    break;
+                case 3:
+                    rotation = GetCornerRotation(hasTop, hasBottom, hasLeft, hasRight, false);
+                    break;
+                case 4:
+                    rotation = GetWallRotation(hasTop, hasBottom, hasLeft, hasRight);
+                    break;
+                case 7:
+                    rotation = GetTJunctionRotation(hasTop, hasBottom, hasLeft, hasRight);
+                    break;
+                case 8:
+                    rotation = GetWallRotation(hasTop, hasBottom, hasLeft, hasRight);
+                    break;
+                default:
                     rotation = 0f;
+                    break;
             }
             
-            // Tiles_6的特殊处理
-            if (tileType == 8)
-            {
-                // 根据周围情况判断
-                if (hasLeft && !hasTop && !hasBottom && !hasRight)
-                    rotation = 0f; // 横着的
-                else if (hasRight && !hasTop && !hasBottom && !hasLeft)
-                    rotation = 0f; // 横着的
-                else if (hasTop && !hasLeft && !hasBottom && !hasRight)
-                    rotation = 90f; // 竖着的
-                else if (hasBottom && !hasTop && !hasLeft && !hasRight)
-                    rotation = 90f; // 竖着的
-            }
+            rotation = ApplyTopLeftSpecialLogic(row, col, tileType, rotation, hasTop, hasBottom, hasLeft, hasRight);
+            
+            return rotation;
         }
+        else
+        {
+            (int mappedRow, int mappedCol) = MapToTopLeft(row, col, quadrantName);
+            return GetRotationAngle(levelMap, mappedRow, mappedCol, tileType, "TopLeft");
+        }
+    }
+    
+    private (int mappedRow, int mappedCol) MapToTopLeft(int row, int col, string quadrantName)
+    {
+        int rows = levelMap.GetLength(0);
+        int cols = levelMap.GetLength(1);
         
-        // 暂时禁用象限调整，让基础逻辑处理所有象限
-        // rotation = AdjustRotationForQuadrant(rotation, tileType, quadrantName);
-        
-        // 调试输出已关闭
-        // if (tileType == 8 && quadrantName == "TopLeft")
-        // {
-        //     Debug.Log($"Tile {tileType} at ({row},{col}) in {quadrantName}: T{hasTop} B{hasBottom} L{hasLeft} R{hasRight} -> Rotation: {rotation}");
-        // }
-        
-        return rotation;
+        switch (quadrantName)
+        {
+            case "TopLeft":
+                return (row, col);
+                
+            case "TopRight":
+                return (row, cols - 1 - col);
+                
+            case "BottomLeft":
+                return (rows - 2 - row, col);
+                
+            case "BottomRight":
+                return (rows - 2 - row, cols - 1 - col);
+                
+            default:
+                return (row, col);
+        }
     }
     
     private bool IsWall(int[,] map, int row, int col)
@@ -263,229 +260,135 @@ public class LevelGenerator : MonoBehaviour
         int rows = map.GetLength(0);
         int cols = map.GetLength(1);
         
-        // 边界检查
         if (row < 0 || row >= rows || col < 0 || col >= cols)
-            return false; // 边界外不算墙，让墙块自己判断
+            return false;
         
         int tileType = map[row, col];
-        // 1,2,3,4,7,8 都是墙类型
         return tileType == 1 || tileType == 2 || tileType == 3 || tileType == 4 || tileType == 7 || tileType == 8;
+    }
+    
+    private float ApplyTopLeftSpecialLogic(int row, int col, int tileType, float baseRotation, bool hasTop, bool hasBottom, bool hasLeft, bool hasRight)
+    {
+        if (tileType == 3 && hasTop && hasBottom && hasLeft && hasRight)
+        {
+            if (row == 9 && col == 8)
+                return 90f;
+            else if (row == 10 && col == 8)
+                return 0f;
+        }
+        
+        if (tileType == 8)
+        {
+            if (hasLeft && !hasTop && !hasBottom && !hasRight)
+                return 0f;
+            else if (hasRight && !hasTop && !hasBottom && !hasLeft)
+                return 0f;
+            else if (hasTop && !hasLeft && !hasBottom && !hasRight)
+                return 90f;
+            else if (hasBottom && !hasTop && !hasLeft && !hasRight)
+                return 90f;
+        }
+        
+        return baseRotation;
     }
     
     private float GetWallRotation(bool hasTop, bool hasBottom, bool hasLeft, bool hasRight)
     {
-        // 计算连接的墙数量
         int wallCount = 0;
         if (hasTop) wallCount++;
         if (hasBottom) wallCount++;
         if (hasLeft) wallCount++;
         if (hasRight) wallCount++;
         
-        // 如果只有2个连接，判断是水平还是垂直
         if (wallCount == 2)
         {
-            // 垂直连接（上下）
             if (hasTop && hasBottom && !hasLeft && !hasRight)
-                return 0f; // 垂直墙
-            // 水平连接（左右）
-            if (hasLeft && hasRight && !hasTop && !hasBottom)
-                return 90f; // 水平墙
-            
-            // 其他2个连接的情况：根据连接方向判断
+                return 0f;            if (hasLeft && hasRight && !hasTop && !hasBottom)
+                return 90f;            
             if ((hasTop || hasBottom) && !(hasLeft || hasRight))
-                return 0f; // 垂直墙
-            if ((hasLeft || hasRight) && !(hasTop || hasBottom))
-                return 90f; // 水平墙
-            
-            // 特殊情况：TFalse BTrue LTrue RFalse 应该是水平墙
+                return 0f;            if ((hasLeft || hasRight) && !(hasTop || hasBottom))
+                return 90f;            
             if (hasBottom && hasLeft && !hasTop && !hasRight)
-                return 90f; // 水平墙
-            if (hasTop && hasRight && !hasBottom && !hasLeft)
-                return 90f; // 水平墙
-            if (hasTop && hasLeft && !hasBottom && !hasRight)
-                return 0f; // 垂直墙
-            if (hasBottom && hasRight && !hasTop && !hasLeft)
-                return 0f; // 垂直墙
-        }
+                return 90f;            if (hasTop && hasRight && !hasBottom && !hasLeft)
+                return 90f;            if (hasTop && hasLeft && !hasBottom && !hasRight)
+                return 0f;            if (hasBottom && hasRight && !hasTop && !hasLeft)
+                return 0f;        }
         
-        // 如果只有1个连接，根据连接方向判断
         if (wallCount == 1)
         {
             if (hasTop || hasBottom)
-                return 0f; // 垂直墙
-            if (hasLeft || hasRight)
-                return 90f; // 水平墙
-        }
+                return 0f;            if (hasLeft || hasRight)
+                return 90f;        }
         
-        // 如果连接数更多，根据主要方向判断
         if (wallCount >= 3)
         {
-            // 如果上下都有墙，优先垂直
             if (hasTop && hasBottom)
-                return 0f; // 垂直墙
-            // 如果左右都有墙，优先水平
-            if (hasLeft && hasRight)
-                return 90f; // 水平墙
-        }
+                return 0f;            if (hasLeft && hasRight)
+                return 90f;        }
         
-        // 默认垂直墙
+
         return 0f;
     }
     
     private float GetCornerRotation(bool hasTop, bool hasBottom, bool hasLeft, bool hasRight, bool isOutside)
     {
-        // 重新设计的拐角旋转逻辑
-        // 根据周围墙的情况确定角的方向
         
-        // 计算连接的墙数量
         int wallCount = 0;
         if (hasTop) wallCount++;
         if (hasBottom) wallCount++;
         if (hasLeft) wallCount++;
         if (hasRight) wallCount++;
         
-        // 如果是1个连接（端点），根据连接方向判断
         if (wallCount == 1)
         {
-            if (hasTop) return 90f;    // 开口向上（向左下）
-            if (hasBottom) return 270f; // 开口向下（向右上）
-            if (hasLeft) return 0f;   // 开口向左（向右下）
-            if (hasRight) return 180f; // 开口向右（向左上）
+            if (hasTop) return 90f;
+            if (hasBottom) return 270f;
+            if (hasLeft) return 0f;
+            if (hasRight) return 180f;
         }
         
-        // 如果是2个连接（普通拐角）
         if (wallCount == 2)
         {
             if (hasTop && hasLeft)
-                return 180f; // 开口向左上
+                return 180f;
             if (hasTop && hasRight)
-                return 90f;  // 开口向左下
+                return 90f;
             if (hasBottom && hasRight)
-                return 0f;   // 开口向右下
+                return 0f;
             if (hasBottom && hasLeft)
-                return 270f; // 开口向右上
+                return 270f;
         }
         
-        // 如果是3个连接（T型区域的拐角）
         if (wallCount == 3)
         {
-            // T型区域的拐角：开口朝向没有墙的方向
-            if (!hasTop) return 90f;    // 开口向上（向左下）
-            if (!hasBottom) return 270f; // 开口向下（向右上）
-            if (!hasLeft) return 0f;   // 开口向左（向右下）
-            if (!hasRight) return 270f; // 开口向右（向右上）- 修正为270度
+            if (!hasTop) return 90f;
+            if (!hasBottom) return 270f;
+            if (!hasLeft) return 0f;
+            if (!hasRight) return 270f;
         }
         
-        // 如果是4个连接（十字路口），根据具体情况判断
         if (wallCount == 4)
         {
-            // 对于4个连接的拐角，我们需要根据具体位置判断
             if (hasTop && hasBottom && hasLeft && hasRight)
             {
-                // 这种情况下，需要根据具体位置判断
-                // 暂时返回默认值，让特殊处理逻辑来处理
                 return 0f;
             }
         }
         
-        return 0f; // 默认
-    }
+        return 0f;    }
     
     private float GetTJunctionRotation(bool hasTop, bool hasBottom, bool hasLeft, bool hasRight)
     {
-        // T型连接的方向
         if (hasTop && hasLeft && hasRight)
-            return 0f; // T向上
+            return 0f;
         if (hasRight && hasTop && hasBottom)
-            return 90f; // T向右
+            return 90f;
         if (hasBottom && hasLeft && hasRight)
-            return 180f; // T向下
+            return 180f;
         if (hasLeft && hasTop && hasBottom)
-            return 270f; // T向左
+            return 270f;
         
-        return 0f; // 默认
-    }
-    
-    private float AdjustRotationForQuadrant(float baseRotation, int tileType, string quadrantName)
-    {
-        // 根据象限调整旋转角度
-        switch (quadrantName)
-        {
-            case "TopLeft":
-                return baseRotation; // 原始象限，不需要调整
-                
-            case "TopRight":
-                // 水平镜像：需要水平翻转旋转
-                if (tileType == 1 || tileType == 3) // 拐角
-                {
-                    // 拐角需要特殊处理
-                    if (baseRotation == 0f) return 90f;
-                    if (baseRotation == 90f) return 0f;
-                    if (baseRotation == 180f) return 270f;
-                    if (baseRotation == 270f) return 180f;
-                }
-                else if (tileType == 2 || tileType == 4 || tileType == 8) // 墙
-                {
-                    // 墙的水平镜像：垂直变水平，水平变垂直
-                    if (baseRotation == 0f) return 90f;
-                    if (baseRotation == 90f) return 0f;
-                }
-                else if (tileType == 7) // T型
-                {
-                    // T型的水平镜像
-                    if (baseRotation == 0f) return 0f; // T向上保持不变
-                    if (baseRotation == 90f) return 270f; // T向右变向左
-                    if (baseRotation == 180f) return 180f; // T向下保持不变
-                    if (baseRotation == 270f) return 90f; // T向左变向右
-                }
-                break;
-                
-            case "BottomLeft":
-                // 垂直镜像：需要垂直翻转旋转
-                if (tileType == 1 || tileType == 3) // 拐角
-                {
-                    // 拐角的垂直镜像
-                    if (baseRotation == 0f) return 270f;
-                    if (baseRotation == 90f) return 180f;
-                    if (baseRotation == 180f) return 90f;
-                    if (baseRotation == 270f) return 0f;
-                }
-                else if (tileType == 2 || tileType == 4 || tileType == 8) // 墙
-                {
-                    // 墙的垂直镜像：垂直变垂直，水平变水平（不变）
-                    return baseRotation;
-                }
-                else if (tileType == 7) // T型
-                {
-                    // T型的垂直镜像
-                    if (baseRotation == 0f) return 180f; // T向上变向下
-                    if (baseRotation == 90f) return 90f; // T向右保持不变
-                    if (baseRotation == 180f) return 0f; // T向下变向上
-                    if (baseRotation == 270f) return 270f; // T向左保持不变
-                }
-                break;
-                
-            case "BottomRight":
-                // 水平+垂直镜像：需要180度旋转
-                if (tileType == 1 || tileType == 3) // 拐角
-                {
-                    return (baseRotation + 180f) % 360f;
-                }
-                else if (tileType == 2 || tileType == 4 || tileType == 8) // 墙
-                {
-                    // 墙的180度旋转：垂直变垂直，水平变水平（不变）
-                    return baseRotation;
-                }
-                else if (tileType == 7) // T型
-                {
-                    // T型的180度旋转
-                    return (baseRotation + 180f) % 360f;
-                }
-                break;
-        }
-        
-        return baseRotation;
-    }
+        return 0f;    }
     
     private int[,] MirrorHorizontally(int[,] original)
     {
@@ -493,7 +396,6 @@ public class LevelGenerator : MonoBehaviour
         int cols = original.GetLength(1);
         int[,] mirrored = new int[rows, cols];
         
-        // 水平镜像：左右翻转
         for (int row = 0; row < rows; row++)
         {
             for (int col = 0; col < cols; col++)
@@ -510,27 +412,15 @@ public class LevelGenerator : MonoBehaviour
     {
         int rows = original.GetLength(0);
         int cols = original.GetLength(1);
-        int[,] mirrored = new int[rows, cols];
+        int[,] mirrored = new int[rows - 1, cols];
         
-        // 垂直镜像：上下翻转，但删除底部行
-        // 新的第0行 = 原来的第13行
-        // 新的第1行 = 原来的第12行
-        // ...
-        // 新的第13行 = 原来的第0行
-        // 新的第14行 = 原来的第14行（保持原样）
         
-        for (int row = 0; row < rows - 1; row++) // 不包含最后一行
+        for (int row = 0; row < rows - 1; row++)
         {
             for (int col = 0; col < cols; col++)
             {
-                mirrored[row, col] = original[rows - 2 - row, col]; // 从倒数第二行开始镜像
+                mirrored[row, col] = original[rows - 2 - row, col];
             }
-        }
-        
-        // 最后一行设为空（0）
-        for (int col = 0; col < cols; col++)
-        {
-            mirrored[rows - 1, col] = 0; // 强制设为空
         }
         
         // Debug.Log($"Vertical mirror: new[0,0] = {mirrored[0,0]} (from original[{rows-2},0] = {original[rows-2,0]})");
@@ -539,14 +429,12 @@ public class LevelGenerator : MonoBehaviour
     
     private void DeleteExistingLevel()
     {
-        // 查找并删除现有的Level 01
         GameObject existingLevel = GameObject.Find("Level 01");
         if (existingLevel != null)
         {
             DestroyImmediate(existingLevel);
         }
         
-        // 删除之前生成的关卡
         GameObject generatedLevel = GameObject.Find("Generated Level");
         if (generatedLevel != null)
         {
@@ -559,23 +447,19 @@ public class LevelGenerator : MonoBehaviour
         Camera mainCamera = Camera.main;
         if (mainCamera != null)
         {
-            // 保持相机在原来的位置 (0, 0, -10)
             mainCamera.transform.position = new Vector3(0, 0, -10);
             
-            // 计算完整关卡的尺寸
             float totalWidth = cols * 2 * tileSize;
             float totalHeight = rows * 2 * tileSize;
             
-            // 调整orthographic size以适应关卡，但保持相机居中
             float aspectRatio = (float)Screen.width / Screen.height;
             float requiredSize = Mathf.Max(totalWidth / (2 * aspectRatio), totalHeight / 2);
-            mainCamera.orthographicSize = requiredSize + 2f; // 加一点边距
+            mainCamera.orthographicSize = requiredSize + 2f;
             
             // Debug.Log($"Camera kept at (0,0,-10), orthographic size adjusted to {mainCamera.orthographicSize}");
         }
     }
     
-    // 隐藏静态地图
     private void HideStaticLevel()
     {
         if (staticLevelObjects != null)
@@ -590,7 +474,6 @@ public class LevelGenerator : MonoBehaviour
         }
     }
     
-    // 显示静态地图（用于编辑器或调试）
     public void ShowStaticLevel()
     {
         if (staticLevelObjects != null)
