@@ -43,6 +43,11 @@ public class GameManager : MonoBehaviour
         {
             StartCoroutine(CoStartLevel01MusicNextFrame());
         }
+
+        if (scene.name == "Level02")
+        {
+            StartCoroutine(CoStartLevel01MusicNextFrame());
+        }
     }
 
     private IEnumerator CoStartLevel01MusicNextFrame()
