@@ -421,12 +421,13 @@ public class PacStudentController : MonoBehaviour
         return false;
     }
     
-    // 播放灰尘粒子特效
+    // 播放灰尘粒子特效（轻量级版本）
     private void PlayDustEffect()
     {
         if (dustParticleSystem != null)
         {
-            dustParticleSystem.Play();
+            // 平衡版本：每次产生5个颗粒，既看得见又不会太卡
+            dustParticleSystem.Emit(5);
         }
     }
     
