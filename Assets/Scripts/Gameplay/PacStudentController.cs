@@ -13,7 +13,11 @@ public class PacStudentController : MonoBehaviour
     [Tooltip("撞墙时播放的一次性碰撞粒子（与移动灰尘不同）")]
     public ParticleSystem wallCollisionParticle;
     
-    private bool isWallCollisionPlaying = false;
+    [Header("Teleporters")]
+    [Tooltip("左侧传送门位置（世界坐标）")]
+    public Transform leftTeleporter;
+    [Tooltip("右侧传送门位置（世界坐标）")]
+    public Transform rightTeleporter;
 
     [Header("Animation")]
     public Animator animator;
@@ -32,6 +36,10 @@ public class PacStudentController : MonoBehaviour
     // 音效防重复播放
     private bool hasPlayedWallSound = false;
     private Vector2 lastWallCollisionPosition;
+    
+    // 传送相关
+    private bool isTeleporting = false;
+    private float teleportCooldown = 0.1f; // 防止重复传送
 
     // 移动方向
     private int moveX = 0;
@@ -84,6 +92,9 @@ public class PacStudentController : MonoBehaviour
             // 不在移动时，尝试移动
             TryMove();
         }
+        
+        // 检查传送
+        CheckTeleportation();
     }
 
     void LateUpdate()
@@ -296,6 +307,106 @@ public class PacStudentController : MonoBehaviour
         {
             wallCollisionParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
+    }
+    
+    // 检查传送
+    private void CheckTeleportation()
+    {
+        if (isTeleporting || leftTeleporter == null || rightTeleporter == null)
+            return;
+            
+        // 检查是否在传送门附近
+        Vector2 currentWorldPos = GridToWorldPosition(currentGridPosition);
+        
+        // 检查左侧传送门（朝左移动时）
+        if (Vector2.Distance(currentWorldPos, leftTeleporter.position) < 0.5f && 
+            (lastInput.x < 0 || currentInput.x < 0))
+        {
+            TeleportToRight();
+        }
+        // 检查右侧传送门（朝右移动时）
+        else if (Vector2.Distance(currentWorldPos, rightTeleporter.position) < 0.5f && 
+                 (lastInput.x > 0 || currentInput.x > 0))
+        {
+            TeleportToLeft();
+        }
+    }
+    
+    // 传送到右侧
+    private void TeleportToRight()
+    {
+        if (isTeleporting) return;
+        
+        isTeleporting = true;
+        
+        // 计算右侧传送门的目标位置（稍微靠右一点，确保继续移动）
+        Vector2 rightPos = rightTeleporter.position;
+        Vector2 targetPos = new Vector2(rightPos.x + 1f, rightPos.y);
+        
+        // 转换为网格坐标
+        Vector2 targetGridPos = WorldToGridPosition(targetPos);
+        
+        // 直接设置位置和网格状态
+        currentGridPosition = targetGridPos;
+        targetGridPosition = targetGridPos;
+        transform.position = new Vector3(targetPos.x, targetPos.y, -2);
+        
+        // 重置移动状态，避免插值冲突
+        isLerping = false;
+        lerpProgress = 0f;
+        
+        // 保持当前移动方向
+        if (lastInput != Vector2.zero)
+        {
+            currentInput = lastInput;
+        }
+        
+        // 启动冷却时间
+        StartCoroutine(TeleportCooldown());
+        
+        Debug.Log($"从左侧传送到右侧: 世界坐标({targetPos.x}, {targetPos.y}) -> 网格坐标({targetGridPos.x}, {targetGridPos.y})");
+    }
+    
+    // 传送到左侧
+    private void TeleportToLeft()
+    {
+        if (isTeleporting) return;
+        
+        isTeleporting = true;
+        
+        // 计算左侧传送门的目标位置（稍微靠左一点，确保继续移动）
+        Vector2 leftPos = leftTeleporter.position;
+        Vector2 targetPos = new Vector2(leftPos.x - 1f, leftPos.y);
+        
+        // 转换为网格坐标
+        Vector2 targetGridPos = WorldToGridPosition(targetPos);
+        
+        // 直接设置位置和网格状态
+        currentGridPosition = targetGridPos;
+        targetGridPosition = targetGridPos;
+        transform.position = new Vector3(targetPos.x, targetPos.y, -2);
+        
+        // 重置移动状态，避免插值冲突
+        isLerping = false;
+        lerpProgress = 0f;
+        
+        // 保持当前移动方向
+        if (lastInput != Vector2.zero)
+        {
+            currentInput = lastInput;
+        }
+        
+        // 启动冷却时间
+        StartCoroutine(TeleportCooldown());
+        
+        Debug.Log($"从右侧传送到左侧: 世界坐标({targetPos.x}, {targetPos.y}) -> 网格坐标({targetGridPos.x}, {targetGridPos.y})");
+    }
+    
+    // 传送冷却时间
+    private System.Collections.IEnumerator TeleportCooldown()
+    {
+        yield return new WaitForSeconds(teleportCooldown);
+        isTeleporting = false;
     }
 
     /* 作业3的旧代码 - 保留作为参考
