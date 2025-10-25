@@ -12,12 +12,17 @@ public class PacStudentController : MonoBehaviour
     public ParticleSystem dustParticleSystem;
     [Tooltip("撞墙时播放的一次性碰撞粒子（与移动灰尘不同）")]
     public ParticleSystem wallCollisionParticle;
+    [Tooltip("死亡时播放的粒子效果")]
+    public ParticleSystem deathParticleSystem;
     
     [Header("Teleporters")]
     [Tooltip("左侧传送门位置（世界坐标）")]
     public Transform leftTeleporter;
     [Tooltip("右侧传送门位置（世界坐标）")]
     public Transform rightTeleporter;
+    
+    // 死亡状态标志
+    private bool isDead = false;
     
     [Header("Game Manager")]
     [Tooltip("游戏管理器引用（如果为空会自动获取）")]
@@ -83,6 +88,12 @@ public class PacStudentController : MonoBehaviour
             wallCollisionParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
         
+        // 初始化死亡粒子系统（确保开始时是停止状态）
+        if (deathParticleSystem != null)
+        {
+            deathParticleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+        
         // 自动获取GameManager引用
         if (gameManager == null)
         {
@@ -92,6 +103,26 @@ public class PacStudentController : MonoBehaviour
 
     void Update()
     {
+        // 检查游戏是否运行
+        if (GameManager.Instance != null && !GameManager.Instance.IsGameRunning())
+        {
+            return; // 倒计时期间不处理输入和移动
+        }
+        
+        // 测试按键：按K键触发死亡
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            Debug.Log("测试按键：手动触发PacStudent死亡");
+            HandlePacStudentDeath();
+            return; // 死亡后不执行其他逻辑
+        }
+        
+        // 死亡时不执行正常移动逻辑
+        if (isDead)
+        {
+            return;
+        }
+        
         // 处理玩家输入
         HandleInput();
         
@@ -124,6 +155,12 @@ public class PacStudentController : MonoBehaviour
 
     void LateUpdate()
     {
+        // 死亡时不执行位置检查
+        if (isDead)
+        {
+            return;
+        }
+        
         // 确保位置不被其他脚本覆盖
         // 如果位置被意外修改，重新设置
         if (!isLerping)
@@ -456,6 +493,8 @@ public class PacStudentController : MonoBehaviour
         // 注意：这里不播放音效，因为WillEatPelletAtNextPosition()已经处理了音效逻辑
         // 播放拾取音效的逻辑在PlayMoveAudio()中根据WillEatPelletAtNextPosition()的结果决定
         
+        Debug.Log($"准备销毁豆子: {pellet.name} (Layer: {pellet.layer})");
+        
         // 增加分数
         if (gameManager != null)
         {
@@ -464,6 +503,15 @@ public class PacStudentController : MonoBehaviour
         
         // 销毁豆子
         Destroy(pellet);
+        // 延迟一帧后再次检查，确保销毁完成
+        StartCoroutine(DelayedCheckAfterDestroy(pellet.name));
+        Debug.Log($"已销毁豆子: {pellet.name}");
+        
+        // 检查是否所有豆子都被吃完
+        if (gameManager != null)
+        {
+            gameManager.CheckAllPelletsEaten();
+        }
         
         // Debug.Log("拾取普通豆子，+10分");
     }
@@ -528,6 +576,16 @@ public class PacStudentController : MonoBehaviour
         hasPickedUpCherry = false;
     }
     
+    // 延迟检查销毁后的豆子
+    private System.Collections.IEnumerator DelayedCheckAfterDestroy(string pelletName)
+    {
+        yield return new WaitForEndOfFrame(); // 等待一帧
+        if (gameManager != null)
+        {
+            gameManager.CheckAllPelletsEaten();
+        }
+    }
+    
     // 检查能量豆拾取
     private void CheckPowerPillPickup()
     {
@@ -563,6 +621,12 @@ public class PacStudentController : MonoBehaviour
         
         // 销毁能量豆
         Destroy(powerPill);
+        
+        // 检查是否所有豆子都被吃完
+        if (gameManager != null)
+        {
+            gameManager.CheckAllPelletsEaten();
+        }
         
         Debug.Log("拾取能量豆，+50分，幽灵进入恐惧状态");
     }
@@ -613,6 +677,13 @@ public class PacStudentController : MonoBehaviour
     // 处理PacStudent死亡
     private void HandlePacStudentDeath()
     {
+        // 防止重复死亡
+        if (isDead)
+        {
+            return;
+        }
+        
+        isDead = true;
         Debug.Log("PacStudent死亡！");
         
         // 扣命
@@ -633,7 +704,7 @@ public class PacStudentController : MonoBehaviour
         // 播放死亡动画
         if (animator != null)
         {
-            animator.SetTrigger("Die");
+            animator.SetTrigger("IsDead");
         }
         
         // 开始死亡序列
@@ -670,23 +741,67 @@ public class PacStudentController : MonoBehaviour
     // 播放死亡粒子效果
     private void PlayDeathParticleEffect()
     {
-        // 这里可以添加死亡粒子效果
-        // 暂时用撞墙粒子代替
-        if (wallCollisionParticle != null)
+        // 播放死亡粒子效果
+        if (deathParticleSystem != null)
         {
-            wallCollisionParticle.transform.position = transform.position;
-            wallCollisionParticle.Play();
+            deathParticleSystem.transform.position = transform.position;
+            deathParticleSystem.Play();
+            Debug.Log($"播放死亡粒子效果，位置: {deathParticleSystem.transform.position}");
+            
+            // 2秒后停止粒子效果
+            StartCoroutine(StopDeathParticleAfterDelay(2f));
+        }
+        else
+        {
+            Debug.LogWarning("死亡粒子效果未配置！");
+        }
+    }
+    
+    // 延迟停止死亡粒子效果
+    private System.Collections.IEnumerator StopDeathParticleAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (deathParticleSystem != null)
+        {
+            deathParticleSystem.Stop();
+            Debug.Log("停止死亡粒子效果");
         }
     }
     
     // 死亡序列
     private System.Collections.IEnumerator DeathSequence()
     {
-        // 停止移动
+        // 停止所有移动状态
         isLerping = false;
+        lerpProgress = 0f;
+        lastInput = Vector2.zero;
+        currentInput = Vector2.zero;
         
-        // 等待死亡动画播放
-        yield return new WaitForSeconds(2f);
+        // 开始向出生点移动
+        Vector3 startPosition = transform.position;
+        Vector3 targetPosition = new Vector3(-12.5f, 13.5f, -2f); // 出生点
+        float moveTime = 2f; // 移动时间
+        float elapsedTime = 0f;
+        
+        Debug.Log("开始死亡移动序列");
+        
+        // 循环播放死亡动画并移动（无视障碍物）
+        while (elapsedTime < moveTime)
+        {
+            elapsedTime += Time.deltaTime;
+            float progress = elapsedTime / moveTime;
+            
+            // 平滑移动到出生点（无视障碍物，类似Cherry的移动）
+            Vector3 newPosition = Vector3.Lerp(startPosition, targetPosition, progress);
+            transform.position = newPosition;
+            
+            Debug.Log($"死亡移动进度: {progress:F2}, 当前位置: {newPosition}, 目标位置: {targetPosition}");
+            
+            yield return null;
+        }
+        
+        // 确保到达出生点
+        transform.position = targetPosition;
         
         // 检查是否还有生命
         if (gameManager != null && gameManager.GetCurrentLives() > 0)
@@ -709,8 +824,8 @@ public class PacStudentController : MonoBehaviour
     {
         Debug.Log("PacStudent重生");
         
-        // 重置到初始位置
-        SetGridPosition(new Vector2(1, 1));
+        // 重置死亡状态
+        isDead = false;
         
         // 重置移动状态
         isLerping = false;
@@ -724,8 +839,29 @@ public class PacStudentController : MonoBehaviour
             animator.SetTrigger("Respawn");
         }
         
+        // 延迟设置位置和朝向，确保动画重置完成
+        StartCoroutine(SetInitialDirectionAfterRespawn());
+        
         // 重置所有幽灵到正常状态和初始位置
         ResetAllGhosts();
+    }
+    
+    // 延迟设置初始位置和朝向
+    private System.Collections.IEnumerator SetInitialDirectionAfterRespawn()
+    {
+        // 等待几帧确保动画重置完成
+        yield return new WaitForSeconds(0.1f);
+        
+        // 设置到初始位置
+        SetGridPosition(new Vector2(1, 1));
+        
+        if (animator != null)
+        {
+            // 设置初始朝向为向右
+            animator.SetInteger("MoveX", 1);
+            animator.SetInteger("MoveY", 0);
+            Debug.Log("设置重生后朝向为向右");
+        }
     }
     
     // 重置所有幽灵

@@ -110,6 +110,15 @@ public class AudioManager : MonoBehaviour
 
     public void PlayPacDeathSFX() => PlaySFX(sfxPacDeath);
 
+    // 停止所有音乐
+    public void StopMusic()
+    {
+        if (musicSource != null)
+        {
+            musicSource.Stop();
+        }
+    }
+
     private void OnDestroy()
     {
         CancelInvoke();

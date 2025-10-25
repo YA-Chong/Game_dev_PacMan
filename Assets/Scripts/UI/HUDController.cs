@@ -12,28 +12,27 @@ public class HUDController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI ghostTimerText;
     [SerializeField] private TextMeshProUGUI levelNameText;
     [SerializeField] private Button exitButton;
+    
+    [Header("Game Over UI")]
+    [SerializeField] private GameObject gameOverOverlay; // 半透明遮罩
+    [SerializeField] private TextMeshProUGUI gameOverText; // "Game Over"文本
 
 
     private int currentLives;
     private int currentScore;
-    private float gameTime;
     private float ghostFrightenedTime;
-    private bool isGameRunning;
 
     void Start()
     {
         // 初始化游戏状态
         currentLives = heartIcons.Length; // 生命值数量 = Heart数组长度
         currentScore = 0;
-        gameTime = 0f;
         ghostFrightenedTime = 0f;
-        isGameRunning = true;
-
 
         // 更新UI显示
         UpdateLivesDisplay(currentLives);
         UpdateScoreDisplay(currentScore);
-        UpdateGameTimerDisplay(gameTime);
+        UpdateGameTimerDisplay(0f); // 初始显示00:00:00
         UpdateGhostTimerDisplay();
 
         // 绑定退出按钮
@@ -66,18 +65,12 @@ public class HUDController : MonoBehaviour
 
     void Update()
     {
-        if (isGameRunning)
+        // 移除HUDController自己的计时器逻辑，完全依赖GameManager
+        // 只处理幽灵恐惧计时器
+        if (ghostFrightenedTime > 0)
         {
-            // 更新游戏计时器
-            gameTime += Time.deltaTime;
-            UpdateGameTimerDisplay(gameTime);
-
-            // 更新幽灵恐惧计时器
-            if (ghostFrightenedTime > 0)
-            {
-                ghostFrightenedTime -= Time.deltaTime;
-                UpdateGhostTimerDisplay();
-            }
+            ghostFrightenedTime -= Time.deltaTime;
+            UpdateGhostTimerDisplay();
         }
     }
 
@@ -108,12 +101,11 @@ public class HUDController : MonoBehaviour
     // 更新游戏计时器显示
     public void UpdateGameTimerDisplay(float time)
     {
-        gameTime = time;
         if (gameTimerText != null)
         {
-            int minutes = Mathf.FloorToInt(gameTime / 60f);
-            int seconds = Mathf.FloorToInt(gameTime % 60f);
-            int milliseconds = Mathf.FloorToInt((gameTime % 1f) * 100f);
+            int minutes = Mathf.FloorToInt(time / 60f);
+            int seconds = Mathf.FloorToInt(time % 60f);
+            int milliseconds = Mathf.FloorToInt((time % 1f) * 100f);
             gameTimerText.text = $"{minutes:00}:{seconds:00}:{milliseconds:00}";
         }
     }
@@ -175,21 +167,72 @@ public class HUDController : MonoBehaviour
     // 游戏结束
     private void GameOver()
     {
-        isGameRunning = false;
         Debug.Log("Game Over!");
         // 这里可以添加游戏结束的UI显示
+    }
+    
+    // 显示Game Over UI
+    public void ShowGameOver()
+    {
+        Debug.Log("HUDController: 显示Game Over UI");
+        
+        if (gameOverOverlay != null)
+        {
+            gameOverOverlay.SetActive(true);
+            Debug.Log("HUDController: 遮罩已激活");
+        }
+        else
+        {
+            Debug.LogWarning("HUDController: gameOverOverlay 未分配！");
+        }
+        
+        if (gameOverText != null)
+        {
+            gameOverText.text = "Game Over";
+            gameOverText.gameObject.SetActive(true);
+            Debug.Log("HUDController: Game Over文本已显示");
+        }
+        else
+        {
+            Debug.LogWarning("HUDController: gameOverText 未分配！");
+        }
+            
+        // 禁用退出按钮
+        if (exitButton != null)
+            exitButton.interactable = false;
+    }
+    
+    // 隐藏Game Over UI
+    public void HideGameOver()
+    {
+        if (gameOverOverlay != null)
+            gameOverOverlay.SetActive(false);
+        if (gameOverText != null)
+            gameOverText.gameObject.SetActive(false);
+            
+        // 重新启用退出按钮
+        if (exitButton != null)
+            exitButton.interactable = true;
     }
 
     // 暂停游戏计时器
     public void PauseGameTimer()
     {
-        isGameRunning = false;
+        // 暂停游戏计时器由GameManager控制
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.PauseGameTimer();
+        }
     }
 
     // 恢复游戏计时器
     public void ResumeGameTimer()
     {
-        isGameRunning = true;
+        // 恢复游戏计时器由GameManager控制
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.ResumeGameTimer();
+        }
     }
 
     // 幽灵恐惧状态改变时的回调

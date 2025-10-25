@@ -1389,6 +1389,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e3cc8d4ab8aa7f4bb1df154558317ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  currentLives: 3
+  currentScore: 0
+  gameTime: 0
+  isGameRunning: 0
+  ghostsFrightened: 0
+  frightenedTimer: 0
+  isCountdownActive: 0
+  countdownValue: 3
+  countdownTimer: 0
+  goDisplayTimer: 0
+  isGameTimerActive: 0
 --- !u!4 &615517184
 Transform:
   m_ObjectHideFlags: 0
@@ -3655,7 +3666,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2003069246
 RectTransform:
   m_ObjectHideFlags: 0
