@@ -249,26 +249,26 @@ public class GameManager : MonoBehaviour
         // 使用LayerMask检查能量豆（Layer 10: PowerPill）
         GameObject[] powerPills = FindGameObjectsByLayer(10);
         
-        Debug.Log($"检查豆子：普通豆子剩余 {pellets.Length} 个，能量豆剩余 {powerPills.Length} 个");
+        // Debug.Log($"检查豆子：普通豆子剩余 {pellets.Length} 个，能量豆剩余 {powerPills.Length} 个");
         
         // 显示剩余的豆子对象名称
-        if (pellets.Length > 0)
-        {
-            Debug.Log("剩余的普通豆子：");
-            foreach (GameObject pellet in pellets)
-            {
-                Debug.Log($"- {pellet.name} (位置: {pellet.transform.position})");
-            }
-        }
+        // if (pellets.Length > 0)
+        // {
+        //     Debug.Log("剩余的普通豆子：");
+        //     foreach (GameObject pellet in pellets)
+        //     {
+        //         Debug.Log($"- {pellet.name} (位置: {pellet.transform.position})");
+        //     }
+        // }
         
-        if (powerPills.Length > 0)
-        {
-            Debug.Log("剩余的能量豆：");
-            foreach (GameObject powerPill in powerPills)
-            {
-                Debug.Log($"- {powerPill.name} (位置: {powerPill.transform.position})");
-            }
-        }
+        // if (powerPills.Length > 0)
+        // {
+        //     Debug.Log("剩余的能量豆：");
+        //     foreach (GameObject powerPill in powerPills)
+        //     {
+        //         Debug.Log($"- {powerPill.name} (位置: {powerPill.transform.position})");
+        //     }
+        // }
         
         if (pellets.Length == 0 && powerPills.Length == 0)
         {
@@ -357,9 +357,32 @@ public class GameManager : MonoBehaviour
     {
         if (AudioManager.Instance == null)
             return;
-        AudioManager.Instance.SwitchBackToNormalBGM();
         
-        // 重置所有幽灵状态为正常
+        // 检查是否有幽灵处于Dead状态
+        GhostController[] ghosts = FindObjectsByType<GhostController>(FindObjectsSortMode.None);
+        bool hasDeadGhost = false;
+        
+        foreach (GhostController ghost in ghosts)
+        {
+            if (ghost.GetCurrentState() == GhostController.GhostState.Dead)
+            {
+                hasDeadGhost = true;
+                break;
+            }
+        }
+        
+        // 只有当没有Dead幽灵时，才切换BGM
+        if (!hasDeadGhost)
+        {
+            AudioManager.Instance.SwitchBackToNormalBGM();
+            Debug.Log("GameManager: Scared结束，切换到Normal BGM");
+        }
+        else
+        {
+            Debug.Log("GameManager: Scared结束，但仍有Dead幽灵，保持Dead BGM");
+        }
+        
+        // 重置所有幽灵状态为正常（Dead幽灵会被SetAllGhostsState跳过）
         SetAllGhostsState("IsNormal", true);
         SetAllGhostsState("IsScared", false);
         SetAllGhostsState("IsRecovering", false);
@@ -373,6 +396,12 @@ public class GameManager : MonoBehaviour
         
         foreach (GhostController ghost in ghosts)
         {
+            // 跳过Dead状态的幽灵（它们正在返回初始位置，不应被打断）
+            if (ghost.GetCurrentState() == GhostController.GhostState.Dead)
+            {
+                continue;
+            }
+            
             // 根据状态名称调用对应的SetGhostState方法
             if (stateName == "IsScared" && value)
             {
@@ -426,9 +455,51 @@ public class GameManager : MonoBehaviour
 
     public void ExitGhostDie()
     {
+        Debug.Log("GameManager: ExitGhostDie() 被调用");
+        
         if (AudioManager.Instance == null)
+        {
+            Debug.LogWarning("GameManager: AudioManager.Instance 为空，无法切换BGM");
             return;
-        AudioManager.Instance.SwitchBackToNormalBGM();
+        }
+        
+        // 检查是否还有其他幽灵处于Dead状态
+        GhostController[] ghosts = FindObjectsByType<GhostController>(FindObjectsSortMode.None);
+        bool hasDeadGhost = false;
+        
+        foreach (GhostController ghost in ghosts)
+        {
+            GhostController.GhostState state = ghost.GetCurrentState();
+            Debug.Log($"GameManager: 检查幽灵 {ghost.ghostNumber}，状态={state}");
+            
+            if (state == GhostController.GhostState.Dead)
+            {
+                hasDeadGhost = true;
+                break;
+            }
+        }
+        
+        Debug.Log($"GameManager: hasDeadGhost={hasDeadGhost}, ghostsFrightened={ghostsFrightened}");
+        
+        // 只有当没有幽灵处于Dead状态时，才恢复正常BGM
+        if (!hasDeadGhost)
+        {
+            // 如果幽灵仍然处于Scared/Recovering状态，切换到Scared BGM
+            if (ghostsFrightened)
+            {
+                AudioManager.Instance.SwitchToScaredBGM();
+                Debug.Log("GameManager: 所有幽灵重生，恢复Scared BGM");
+            }
+            else
+            {
+                AudioManager.Instance.SwitchBackToNormalBGM();
+                Debug.Log("GameManager: 所有幽灵重生，恢复Normal BGM");
+            }
+        }
+        else
+        {
+            Debug.Log("GameManager: 仍有Dead幽灵，保持Dead BGM");
+        }
     }
 
     // 获取当前状态

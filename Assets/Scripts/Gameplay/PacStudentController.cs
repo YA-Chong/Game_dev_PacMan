@@ -263,12 +263,12 @@ public class PacStudentController : MonoBehaviour
         // 阶段2：实现真正的碰撞检测
         Vector2 worldPos = GridToWorldPosition(gridPos);
         
-        // 使用射线检测检查目标位置是否有墙壁
-        Collider2D wallCollider = Physics2D.OverlapPoint(worldPos, LayerMask.GetMask("Wall"));
+        // 使用射线检测检查目标位置是否有墙壁或门
+        Collider2D wallCollider = Physics2D.OverlapPoint(worldPos, LayerMask.GetMask("Wall", "TopDoor", "BottomDoor"));
         
         if (wallCollider != null)
         {
-            return false; // 有墙壁，不能移动
+            return false; // 有墙壁或门，不能移动
         }
         
         // 简单的边界检查，防止移动到太远的地方
@@ -493,7 +493,7 @@ public class PacStudentController : MonoBehaviour
         // 注意：这里不播放音效，因为WillEatPelletAtNextPosition()已经处理了音效逻辑
         // 播放拾取音效的逻辑在PlayMoveAudio()中根据WillEatPelletAtNextPosition()的结果决定
         
-        Debug.Log($"准备销毁豆子: {pellet.name} (Layer: {pellet.layer})");
+        // Debug.Log($"准备销毁豆子: {pellet.name} (Layer: {pellet.layer})");
         
         // 增加分数
         if (gameManager != null)
@@ -505,7 +505,7 @@ public class PacStudentController : MonoBehaviour
         Destroy(pellet);
         // 延迟一帧后再次检查，确保销毁完成
         StartCoroutine(DelayedCheckAfterDestroy(pellet.name));
-        Debug.Log($"已销毁豆子: {pellet.name}");
+        // Debug.Log($"已销毁豆子: {pellet.name}");
         
         // 检查是否所有豆子都被吃完
         if (gameManager != null)
@@ -764,7 +764,7 @@ public class PacStudentController : MonoBehaviour
         if (deathParticleSystem != null)
         {
             deathParticleSystem.Stop();
-            Debug.Log("停止死亡粒子效果");
+            // Debug.Log("停止死亡粒子效果");
         }
     }
     
@@ -795,7 +795,7 @@ public class PacStudentController : MonoBehaviour
             Vector3 newPosition = Vector3.Lerp(startPosition, targetPosition, progress);
             transform.position = newPosition;
             
-            Debug.Log($"死亡移动进度: {progress:F2}, 当前位置: {newPosition}, 目标位置: {targetPosition}");
+            // Debug.Log($"死亡移动进度: {progress:F2}, 当前位置: {newPosition}, 目标位置: {targetPosition}");
             
             yield return null;
         }
