@@ -10,6 +10,10 @@ public class PacStudentController : MonoBehaviour
     
     [Header("Particle Effects")]
     public ParticleSystem dustParticleSystem;
+    [Tooltip("撞墙时播放的一次性碰撞粒子（与移动灰尘不同）")]
+    public ParticleSystem wallCollisionParticle;
+    
+    private bool isWallCollisionPlaying = false;
 
     [Header("Animation")]
     public Animator animator;
@@ -57,6 +61,12 @@ public class PacStudentController : MonoBehaviour
         isLerping = false;
         lastInput = Vector2.zero;
         currentInput = Vector2.zero;
+        
+        // 初始化撞墙粒子系统（确保开始时是停止状态）
+        if (wallCollisionParticle != null)
+        {
+            wallCollisionParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
     }
 
     void Update()
@@ -217,11 +227,74 @@ public class PacStudentController : MonoBehaviour
                 audioManager.PlayCollideWallSFX();
             }
             
+            // 播放墙体碰撞粒子（一次性）
+            PlayWallCollisionEffect();
+
             // 标记已播放音效
             hasPlayedWallSound = true;
             lastWallCollisionPosition = currentGridPosition;
             
             Debug.Log("PacStudent撞墙了！");
+        }
+    }
+
+    // 播放墙体碰撞粒子（与移动灰尘不同）
+    private void PlayWallCollisionEffect()
+    {
+        if (wallCollisionParticle == null)
+        {
+            return;
+        }
+
+        // 计算尝试移动方向
+        Vector2 attemptedDir = Vector2.zero;
+        if (lastInput != Vector2.zero)
+        {
+            attemptedDir = lastInput.normalized;
+        }
+        else if (currentInput != Vector2.zero)
+        {
+            attemptedDir = currentInput.normalized;
+        }
+
+        // 当前世界位置
+        Vector2 currentWorldPos = GridToWorldPosition(currentGridPosition);
+
+        // 用射线尽量获取真实的墙面命中点；否则退化为前方半格
+        RaycastHit2D hit = Physics2D.Raycast(currentWorldPos, attemptedDir, gridSize, LayerMask.GetMask("Wall"));
+        Vector3 spawnPos;
+        if (hit.collider != null)
+        {
+            spawnPos = new Vector3(hit.point.x, hit.point.y, -2f);
+        }
+        else
+        {
+            spawnPos = new Vector3(currentWorldPos.x + attemptedDir.x * (gridSize * 0.5f),
+                                   currentWorldPos.y + attemptedDir.y * (gridSize * 0.5f),
+                                   -2f);
+        }
+
+        // 先停止并清除所有粒子
+        wallCollisionParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        
+        // 将粒子系统移动到碰撞点
+        wallCollisionParticle.transform.position = spawnPos;
+        
+        // 播放一次粒子效果
+        wallCollisionParticle.Play();
+        
+        // 启动协程来停止粒子效果
+        StartCoroutine(StopWallCollisionParticleAfterDelay());
+    }
+    
+    private System.Collections.IEnumerator StopWallCollisionParticleAfterDelay()
+    {
+        // 等待粒子效果播放完成（根据你的粒子系统设置调整时间）
+        yield return new WaitForSeconds(0.5f);
+        
+        if (wallCollisionParticle != null)
+        {
+            wallCollisionParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
     }
 
