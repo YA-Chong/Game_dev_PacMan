@@ -18,6 +18,10 @@ public class PacStudentController : MonoBehaviour
     public Transform leftTeleporter;
     [Tooltip("右侧传送门位置（世界坐标）")]
     public Transform rightTeleporter;
+    
+    [Header("Game Manager")]
+    [Tooltip("游戏管理器引用（如果为空会自动获取）")]
+    public GameManager gameManager;
 
     [Header("Animation")]
     public Animator animator;
@@ -40,6 +44,9 @@ public class PacStudentController : MonoBehaviour
     // 传送相关
     private bool isTeleporting = false;
     private float teleportCooldown = 0.1f; // 防止重复传送
+    
+    // 樱桃拾取相关
+    private bool hasPickedUpCherry = false;
 
     // 移动方向
     private int moveX = 0;
@@ -75,6 +82,12 @@ public class PacStudentController : MonoBehaviour
         {
             wallCollisionParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
+        
+        // 自动获取GameManager引用
+        if (gameManager == null)
+        {
+            gameManager = GameManager.Instance;
+        }
     }
 
     void Update()
@@ -95,6 +108,18 @@ public class PacStudentController : MonoBehaviour
         
         // 检查传送
         CheckTeleportation();
+        
+        // 检查豆子拾取
+        CheckPelletPickup();
+        
+        // 检查樱桃拾取
+        CheckCherryPickup();
+        
+        // 检查能量豆拾取
+        CheckPowerPillPickup();
+        
+        // 检查幽灵碰撞
+        CheckGhostCollision();
     }
 
     void LateUpdate()
@@ -408,6 +433,312 @@ public class PacStudentController : MonoBehaviour
         yield return new WaitForSeconds(teleportCooldown);
         isTeleporting = false;
     }
+    
+    // 检查豆子拾取
+    private void CheckPelletPickup()
+    {
+        // 获取当前网格位置的世界坐标
+        Vector2 currentWorldPos = GridToWorldPosition(currentGridPosition);
+        
+        // 检测该位置是否有豆子
+        Collider2D pellet = Physics2D.OverlapPoint(currentWorldPos, LayerMask.GetMask("Pellet"));
+        
+        if (pellet != null)
+        {
+            // 拾取豆子
+            PickupPellet(pellet.gameObject);
+        }
+    }
+    
+    // 拾取豆子
+    private void PickupPellet(GameObject pellet)
+    {
+        // 注意：这里不播放音效，因为WillEatPelletAtNextPosition()已经处理了音效逻辑
+        // 播放拾取音效的逻辑在PlayMoveAudio()中根据WillEatPelletAtNextPosition()的结果决定
+        
+        // 增加分数
+        if (gameManager != null)
+        {
+            gameManager.AddScore(10); // 普通豆子+10分
+        }
+        
+        // 销毁豆子
+        Destroy(pellet);
+        
+        // Debug.Log("拾取普通豆子，+10分");
+    }
+    
+    // 检查樱桃拾取
+    private void CheckCherryPickup()
+    {
+        // 获取当前世界位置
+        Vector2 currentWorldPos = GridToWorldPosition(currentGridPosition);
+        
+        // 使用适中的检测范围拾取樱桃
+        Collider2D cherry = Physics2D.OverlapCircle(currentWorldPos, 0.5f, LayerMask.GetMask("Cherry"));
+        
+        if (cherry != null && !hasPickedUpCherry)
+        {
+            // 拾取樱桃
+            PickupCherry(cherry.gameObject);
+        }
+    }
+    
+    // 拾取樱桃
+    private void PickupCherry(GameObject cherry)
+    {
+        // 防止重复拾取
+        hasPickedUpCherry = true;
+        
+        // 播放拾取音效（使用吃豆子音效）
+        if (audioManager != null)
+        {
+            audioManager.PlayEatPelletSFX();
+        }
+        
+        // 增加分数
+        if (gameManager != null)
+        {
+            gameManager.AddScore(100); // 樱桃+100分
+        }
+        
+        // 通知CherryController重置状态（而不是直接销毁）
+        CherryController cherryController = cherry.GetComponent<CherryController>();
+        if (cherryController != null)
+        {
+            // 调用CherryController的重置方法
+            cherryController.ResetCherry();
+        }
+        else
+        {
+            // 如果没有CherryController，直接销毁
+            Destroy(cherry);
+        }
+        
+        Debug.Log("拾取樱桃，+100分");
+        
+        // 重置拾取标志（为下次樱桃做准备）
+        StartCoroutine(ResetCherryPickupFlag());
+    }
+    
+    // 重置樱桃拾取标志
+    private System.Collections.IEnumerator ResetCherryPickupFlag()
+    {
+        yield return new WaitForSeconds(1f); // 等待1秒后重置
+        hasPickedUpCherry = false;
+    }
+    
+    // 检查能量豆拾取
+    private void CheckPowerPillPickup()
+    {
+        // 获取当前网格位置的世界坐标
+        Vector2 currentWorldPos = GridToWorldPosition(currentGridPosition);
+        
+        // 检测该位置是否有能量豆
+        Collider2D powerPill = Physics2D.OverlapPoint(currentWorldPos, LayerMask.GetMask("PowerPill"));
+        
+        if (powerPill != null)
+        {
+            // 拾取能量豆
+            PickupPowerPill(powerPill.gameObject);
+        }
+    }
+    
+    // 拾取能量豆
+    private void PickupPowerPill(GameObject powerPill)
+    {
+        // 播放拾取音效（使用吃豆子音效）
+        if (audioManager != null)
+        {
+            audioManager.PlayEatPelletSFX();
+        }
+        
+        // 增加分数
+        if (gameManager != null)
+        {
+            gameManager.AddScore(50); // 能量豆+50分
+            // 触发幽灵恐惧状态
+            gameManager.SetGhostsFrightened(true);
+        }
+        
+        // 销毁能量豆
+        Destroy(powerPill);
+        
+        Debug.Log("拾取能量豆，+50分，幽灵进入恐惧状态");
+    }
+    
+    // 检查幽灵碰撞
+    private void CheckGhostCollision()
+    {
+        // 获取当前世界位置
+        Vector2 currentWorldPos = GridToWorldPosition(currentGridPosition);
+        
+        // 检测该位置是否有幽灵
+        Collider2D ghost = Physics2D.OverlapPoint(currentWorldPos, LayerMask.GetMask("Ghost"));
+        
+        if (ghost != null)
+        {
+            // 处理幽灵碰撞
+            HandleGhostCollision(ghost.gameObject);
+        }
+    }
+    
+    // 处理幽灵碰撞
+    private void HandleGhostCollision(GameObject ghost)
+    {
+        GhostController ghostController = ghost.GetComponent<GhostController>();
+        if (ghostController == null) return;
+        
+        GhostController.GhostState ghostState = ghostController.GetCurrentState();
+        
+        switch (ghostState)
+        {
+            case GhostController.GhostState.Normal:
+                // 正常状态：PacStudent死亡
+                HandlePacStudentDeath();
+                break;
+                
+            case GhostController.GhostState.Scared:
+            case GhostController.GhostState.Recovering:
+                // 恐惧/恢复状态：幽灵被吃
+                HandleGhostEaten(ghostController);
+                break;
+                
+            case GhostController.GhostState.Dead:
+                // 死亡状态：无碰撞效果
+                break;
+        }
+    }
+    
+    // 处理PacStudent死亡
+    private void HandlePacStudentDeath()
+    {
+        Debug.Log("PacStudent死亡！");
+        
+        // 扣命
+        if (gameManager != null)
+        {
+            gameManager.LoseLife();
+        }
+        
+        // 播放死亡音效
+        if (audioManager != null)
+        {
+            audioManager.PlayPacDeathSFX();
+        }
+        
+        // 播放死亡粒子效果
+        PlayDeathParticleEffect();
+        
+        // 播放死亡动画
+        if (animator != null)
+        {
+            animator.SetTrigger("Die");
+        }
+        
+        // 开始死亡序列
+        StartCoroutine(DeathSequence());
+    }
+    
+    // 处理幽灵被吃
+    private void HandleGhostEaten(GhostController ghostController)
+    {
+        Debug.Log("幽灵被吃！");
+        
+        // 增加分数
+        if (gameManager != null)
+        {
+            gameManager.AddScore(300); // 吃幽灵+300分
+        }
+        
+        // 播放吃幽灵音效
+        if (audioManager != null)
+        {
+            audioManager.PlayEatPelletSFX(); // 使用吃豆子音效
+        }
+        
+        // 设置幽灵为死亡状态
+        ghostController.SetGhostState(GhostController.GhostState.Dead);
+        
+        // 播放幽灵死亡BGM
+        if (gameManager != null)
+        {
+            gameManager.EnterGhostDie();
+        }
+    }
+    
+    // 播放死亡粒子效果
+    private void PlayDeathParticleEffect()
+    {
+        // 这里可以添加死亡粒子效果
+        // 暂时用撞墙粒子代替
+        if (wallCollisionParticle != null)
+        {
+            wallCollisionParticle.transform.position = transform.position;
+            wallCollisionParticle.Play();
+        }
+    }
+    
+    // 死亡序列
+    private System.Collections.IEnumerator DeathSequence()
+    {
+        // 停止移动
+        isLerping = false;
+        
+        // 等待死亡动画播放
+        yield return new WaitForSeconds(2f);
+        
+        // 检查是否还有生命
+        if (gameManager != null && gameManager.GetCurrentLives() > 0)
+        {
+            // 重生
+            RespawnPacStudent();
+        }
+        else
+        {
+            // 游戏结束
+            if (gameManager != null)
+            {
+                gameManager.GameOver();
+            }
+        }
+    }
+    
+    // 重生PacStudent
+    private void RespawnPacStudent()
+    {
+        Debug.Log("PacStudent重生");
+        
+        // 重置到初始位置
+        SetGridPosition(new Vector2(1, 1));
+        
+        // 重置移动状态
+        isLerping = false;
+        lerpProgress = 0f;
+        lastInput = Vector2.zero;
+        currentInput = Vector2.zero;
+        
+        // 重置动画
+        if (animator != null)
+        {
+            animator.SetTrigger("Respawn");
+        }
+        
+        // 重置所有幽灵到正常状态和初始位置
+        ResetAllGhosts();
+    }
+    
+    // 重置所有幽灵
+    private void ResetAllGhosts()
+    {
+        GhostController[] ghosts = FindObjectsByType<GhostController>(FindObjectsSortMode.None);
+        foreach (GhostController ghost in ghosts)
+        {
+            ghost.SetGhostState(GhostController.GhostState.Normal);
+            // 这里可以设置幽灵回到初始位置
+            // ghost.SetPosition(ghostInitialPosition);
+        }
+    }
 
     /* 作业3的旧代码 - 保留作为参考
     private Vector2[] gridPathPoints = new Vector2[]
@@ -600,9 +931,16 @@ public class PacStudentController : MonoBehaviour
     // 检查下一个位置是否有豆子
     private bool WillEatPelletAtNextPosition()
     {
-        // 阶段3：暂时返回false，等70%档实现真正的豆子检测
-        // 这里先实现基础框架，后续会完善
-        return false;
+        // 获取下一个网格位置
+        Vector2 nextGridPos = currentGridPosition + currentInput;
+        
+        // 转换为世界坐标
+        Vector2 nextWorldPos = GridToWorldPosition(nextGridPos);
+        
+        // 检测该位置是否有豆子
+        Collider2D pellet = Physics2D.OverlapPoint(nextWorldPos, LayerMask.GetMask("Pellet"));
+        
+        return pellet != null;
     }
     
     // 播放灰尘粒子特效（轻量级版本）

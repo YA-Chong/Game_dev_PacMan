@@ -65,6 +65,19 @@ public class GameManager : MonoBehaviour
             if (ghostsFrightened && frightenedTimer > 0)
             {
                 frightenedTimer -= Time.deltaTime;
+                
+                // 剩余3秒时切换到恢复状态
+                if (frightenedTimer <= 3f && frightenedTimer > 0f)
+                {
+                    // 只在第一次进入恢复状态时切换
+                    if (!IsInRecoveringState())
+                    {
+                        SetAllGhostsState("IsRecovering", true);
+                        SetAllGhostsState("IsScared", false);
+                        SetAllGhostsState("IsNormal", false);
+                    }
+                }
+                
                 if (frightenedTimer <= 0)
                 {
                     SetGhostsFrightened(false);
@@ -171,6 +184,9 @@ public class GameManager : MonoBehaviour
         if (AudioManager.Instance == null)
             return;
         AudioManager.Instance.SwitchToScaredBGM();
+        
+        // 设置所有幽灵为恐惧状态
+        SetAllGhostsState("IsScared", true);
     }
 
     public void ExitScared()
@@ -178,6 +194,63 @@ public class GameManager : MonoBehaviour
         if (AudioManager.Instance == null)
             return;
         AudioManager.Instance.SwitchBackToNormalBGM();
+        
+        // 重置所有幽灵状态为正常
+        SetAllGhostsState("IsNormal", true);
+        SetAllGhostsState("IsScared", false);
+        SetAllGhostsState("IsRecovering", false);
+        SetAllGhostsState("IsDead", false);
+    }
+    
+    // 设置所有幽灵的动画状态
+    private void SetAllGhostsState(string stateName, bool value)
+    {
+        GhostController[] ghosts = FindObjectsByType<GhostController>(FindObjectsSortMode.None);
+        
+        foreach (GhostController ghost in ghosts)
+        {
+            // 根据状态名称调用对应的SetGhostState方法
+            if (stateName == "IsScared" && value)
+            {
+                ghost.SetGhostState(GhostController.GhostState.Scared);
+            }
+            else if (stateName == "IsRecovering" && value)
+            {
+                ghost.SetGhostState(GhostController.GhostState.Recovering);
+            }
+            else if (stateName == "IsNormal" && value)
+            {
+                ghost.SetGhostState(GhostController.GhostState.Normal);
+            }
+            else if (stateName == "IsDead" && value)
+            {
+                ghost.SetGhostState(GhostController.GhostState.Dead);
+            }
+            else
+            {
+                // 直接设置Animator参数（用于false值）
+                Animator animator = ghost.animator != null ? ghost.animator : ghost.GetComponentInChildren<Animator>();
+                if (animator != null)
+                {
+                    animator.SetBool(stateName, value);
+                }
+            }
+        }
+    }
+    
+    // 检查是否在恢复状态
+    private bool IsInRecoveringState()
+    {
+        GhostController[] ghosts = FindObjectsByType<GhostController>(FindObjectsSortMode.None);
+        foreach (GhostController ghost in ghosts)
+        {
+            Animator animator = ghost.animator != null ? ghost.animator : ghost.GetComponentInChildren<Animator>();
+            if (animator != null && animator.GetBool("IsRecovering"))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void EnterGhostDie()

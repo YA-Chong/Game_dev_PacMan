@@ -3,7 +3,7 @@ using UnityEngine;
 public class CherryController : MonoBehaviour
 {
     [Header("Cherry Settings")]
-    public float moveSpeed = 0.5f; // 降低移动速度，与PacStudent类似
+    public float moveSpeed = 0.3f; // 进一步降低移动速度，更容易拾取
     
     [Header("Movement")]
     private Vector3 startPosition;
@@ -32,6 +32,9 @@ public class CherryController : MonoBehaviour
         {
             renderer.sortingOrder = 10; // 比其他精灵更高的渲染顺序
         }
+        
+        // 设置碰撞体用于拾取检测
+        SetupCollider();
         
         // 初始时隐藏Cherry（但保持对象启用）
         GetComponent<SpriteRenderer>().enabled = false;
@@ -246,5 +249,42 @@ public class CherryController : MonoBehaviour
         transform.position = Vector3.zero; // 重置到原点
         
         //Debug.Log("Cherry重置，5秒后重新生成");
+    }
+    
+    // 重置樱桃（被拾取时调用）
+    public void ResetCherry()
+    {
+        // 重置状态，准备重新生成
+        hasSpawned = false;
+        spawnTimer = 5f; // 5秒后重新生成
+        isMoving = false;
+        moveProgress = 0f;
+        hasEnteredCameraView = false;
+        
+        // 隐藏Cherry并重置位置
+        GetComponent<SpriteRenderer>().enabled = false;
+        transform.position = Vector3.zero; // 重置到原点
+        
+        //Debug.Log("Cherry被拾取，重置状态，5秒后重新生成");
+    }
+    
+    // 设置碰撞体
+    private void SetupCollider()
+    {
+        // 添加CircleCollider2D用于拾取检测
+        CircleCollider2D collider = GetComponent<CircleCollider2D>();
+        if (collider == null)
+        {
+            collider = gameObject.AddComponent<CircleCollider2D>();
+        }
+        
+        // 设置为触发器
+        collider.isTrigger = true;
+        
+        // 设置合适的碰撞体大小
+        collider.radius = 0.4f; // 适中的碰撞体大小
+        
+        // 设置Layer为Cherry
+        gameObject.layer = LayerMask.NameToLayer("Cherry");
     }
 }
