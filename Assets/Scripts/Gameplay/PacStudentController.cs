@@ -809,14 +809,7 @@ public class PacStudentController : MonoBehaviour
             // 重生
             RespawnPacStudent();
         }
-        else
-        {
-            // 游戏结束
-            if (gameManager != null)
-            {
-                gameManager.GameOver();
-            }
-        }
+        // 注意：不需要在这里调用GameOver()，因为LoseLife()已经处理了
     }
     
     // 重生PacStudent

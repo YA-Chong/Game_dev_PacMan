@@ -30,7 +30,6 @@ public class GhostController : MonoBehaviour
     private bool isLerping = false;
     private float lerpProgress = 0f;
     private Vector2 lastDirection = Vector2.zero;
-    private int recursionDepth = 0; // 防止无限递归
     
     // Ghost 3 专用：随机移动（记录上一次的方向）
     private Vector2 ghost3CurrentDirection = Vector2.zero;
@@ -39,8 +38,8 @@ public class GhostController : MonoBehaviour
     private Vector2 ghost4CurrentDirection = Vector2.zero;
     private bool ghost4ReachedOuterWall = false; // 是否已经到达外墙
     private int ghost4CurrentCornerIndex = -1; // 当前目标角的索引（0=左上, 1=右上, 2=右下, 3=左下）
-    private bool ghost4IsEscapingDeadEnd = false; // 是否正在逃离死胡同
-    private int ghost4EscapeStepCounter = 0; // 逃离步数计数器
+    private bool ghost4IsEscapingDeadEnd = false; // 是否正在逃离死胡同（虽然当前未使用，但保留以备后用）
+    private int ghost4EscapeStepCounter = 0; // 逃离步数计数器（虽然当前未使用，但保留以备后用）
     
     // 外圈四个角的坐标（顺时针顺序）
     private readonly Vector2[] outerCorners = new Vector2[]
@@ -56,7 +55,7 @@ public class GhostController : MonoBehaviour
     private bool isReturningToDead = false; // 是否正在返回初始位置（Dead状态）
     
     // 网格设置
-    private float gridSize = 1f;
+    // private float gridSize = 1f; // 未使用，已注释
     
     void Start()
     {
