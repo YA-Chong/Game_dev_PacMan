@@ -68,8 +68,6 @@ public class PacStudentController : MonoBehaviour
         Vector2 startWorldPos = GridToWorldPosition(currentGridPosition);
         transform.position = new Vector3(startWorldPos.x, startWorldPos.y, -2);
 
-        Debug.Log($"PacStudent初始位置设置为: {transform.position}");
-
         // 设置渲染顺序
         SpriteRenderer renderer = GetComponent<SpriteRenderer>();
         if (renderer != null)
@@ -264,7 +262,9 @@ public class PacStudentController : MonoBehaviour
         Vector2 worldPos = GridToWorldPosition(gridPos);
         
         // 使用射线检测检查目标位置是否有墙壁或门
-        Collider2D wallCollider = Physics2D.OverlapPoint(worldPos, LayerMask.GetMask("Wall", "TopDoor", "BottomDoor"));
+        // 使用Layer ID：Wall=6, TopDoor=12, BottomDoor=13
+        int layerMask = (1 << 6) | (1 << 12) | (1 << 13);
+        Collider2D wallCollider = Physics2D.OverlapPoint(worldPos, layerMask);
         
         if (wallCollider != null)
         {

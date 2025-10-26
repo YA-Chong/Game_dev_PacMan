@@ -23,12 +23,10 @@ public class CountdownController : MonoBehaviour
         {
             GameManager.Instance.OnCountdownChanged += UpdateCountdown;
             GameManager.Instance.OnCountdownFinished += HideCountdown;
-            Debug.Log("CountdownController: 已订阅倒计时事件");
             
             // 检查是否已经有倒计时在进行
             if (GameManager.Instance.IsCountdownActive())
             {
-                Debug.Log("CountdownController: 检测到倒计时已在进行，立即更新UI");
                 UpdateCountdown(GameManager.Instance.GetCountdownValue());
             }
         }
@@ -50,8 +48,6 @@ public class CountdownController : MonoBehaviour
     
     private void UpdateCountdown(int value)
     {
-        Debug.Log($"CountdownController: 更新倒计时 {value}");
-        
         if (value > 0)
         {
             countdownText.text = value.ToString();
@@ -68,7 +64,6 @@ public class CountdownController : MonoBehaviour
     
     private void HideCountdown()
     {
-        Debug.Log("CountdownController: 隐藏倒计时UI");
         countdownOverlay.SetActive(false);
         countdownText.gameObject.SetActive(false);
     }

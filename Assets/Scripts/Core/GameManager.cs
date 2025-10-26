@@ -90,7 +90,6 @@ public class GameManager : MonoBehaviour
                     OnCountdownChanged?.Invoke(0); // 显示"GO!"
                     countdownValue = -1; // 标记为GO!状态
                     goDisplayTimer = 0f; // 重置GO!显示计时器
-                    Debug.Log("GameManager: 显示GO!");
                 }
             }
             
@@ -100,7 +99,6 @@ public class GameManager : MonoBehaviour
                 goDisplayTimer += Time.deltaTime;
                 if (goDisplayTimer >= 0.8f) // 显示0.8秒后结束
                 {
-                    Debug.Log("GameManager: GO!显示0.8秒，结束倒计时");
                     FinishCountdown();
                 }
             }
@@ -293,7 +291,6 @@ public class GameManager : MonoBehaviour
         // 等待几帧确保所有UI组件都已初始化
         yield return new WaitForSeconds(0.1f);
         
-        Debug.Log("GameManager: 延迟启动倒计时");
         StartCountdown();
     }
     
@@ -306,14 +303,11 @@ public class GameManager : MonoBehaviour
         
         // 立即显示"3"
         OnCountdownChanged?.Invoke(countdownValue);
-        
-        Debug.Log("GameManager: 开始倒计时，显示3");
     }
     
     // 倒计时完成
     private void FinishCountdown()
     {
-        Debug.Log("GameManager: 倒计时完成，隐藏UI");
         isCountdownActive = false;
         isGameRunning = true;
         isGameTimerActive = true; // 开始游戏计时器
