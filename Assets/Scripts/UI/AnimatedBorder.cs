@@ -11,7 +11,6 @@ public class AnimatedBorder : MonoBehaviour
     
     void Start()
     {
-        // 获取所有子对象的Image组件
         borderDots = new Image[transform.childCount];
         for (int i = 0; i < transform.childCount; i++)
         {
@@ -21,7 +20,6 @@ public class AnimatedBorder : MonoBehaviour
     
     void Update()
     {
-        // 让所有点一起脉冲
         float alpha = Mathf.Lerp(minAlpha, maxAlpha, 
             (Mathf.Sin(Time.time * pulseSpeed) + 1f) / 2f);
         

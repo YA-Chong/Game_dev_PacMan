@@ -20,12 +20,11 @@ public class GameManager : MonoBehaviour
     [SerializeField] private bool isCountdownActive = false;
     [SerializeField] private int countdownValue = 3;
     [SerializeField] private float countdownTimer = 0f;
-    [SerializeField] private float goDisplayTimer = 0f; // GO!显示计时器
+    [SerializeField] private float goDisplayTimer = 0f; 
     
     [Header("Game Timer")]
-    [SerializeField] private bool isGameTimerActive = false; // 游戏计时器是否激活
+    [SerializeField] private bool isGameTimerActive = false; 
 
-    // 事件
     public System.Action<int> OnLivesChanged;
     public System.Action<int> OnScoreChanged;
     public System.Action<float> OnGameTimeChanged;
@@ -53,7 +52,6 @@ public class GameManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
         
-        // 强制初始化游戏状态
         isGameRunning = false;
         isGameTimerActive = false;
         gameTime = 0f;
@@ -71,7 +69,6 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        // 处理倒计时
         if (isCountdownActive)
         {
             countdownTimer += Time.deltaTime;
@@ -87,17 +84,16 @@ public class GameManager : MonoBehaviour
                 }
                 else if (countdownValue == 0)
                 {
-                    OnCountdownChanged?.Invoke(0); // 显示"GO!"
-                    countdownValue = -1; // 标记为GO!状态
-                    goDisplayTimer = 0f; // 重置GO!显示计时器
+                    OnCountdownChanged?.Invoke(0);
+                    countdownValue = -1;
+                    goDisplayTimer = 0f;
                 }
             }
             
-            // GO!显示计时器独立累加
             if (countdownValue == -1)
             {
                 goDisplayTimer += Time.deltaTime;
-                if (goDisplayTimer >= 0.8f) // 显示0.8秒后结束
+                if (goDisplayTimer >= 0.8f)
                 {
                     FinishCountdown();
                 }
@@ -106,19 +102,15 @@ public class GameManager : MonoBehaviour
         
         if (isGameRunning && isGameTimerActive)
         {
-            // 更新游戏时间
             gameTime += Time.deltaTime;
             OnGameTimeChanged?.Invoke(gameTime);
 
-            // 更新幽灵恐惧计时器
             if (ghostsFrightened && frightenedTimer > 0)
             {
                 frightenedTimer -= Time.deltaTime;
                 
-                // 剩余3秒时切换到恢复状态
                 if (frightenedTimer <= 3f && frightenedTimer > 0f)
                 {
-                    // 只在第一次进入恢复状态时切换
                     if (!IsInRecoveringState())
                     {
                         SetAllGhostsState("IsRecovering", true);
@@ -159,12 +151,11 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // 开始游戏
     public void StartGame()
     {
-        isGameRunning = false; // 倒计时期间游戏不运行
-        isGameTimerActive = false; // 倒计时期间计时器不运行
-        gameTime = 0f; // 重置游戏时间
+        isGameRunning = false;
+        isGameTimerActive = false;
+        gameTime = 0f;
         currentLives = 3;
         currentScore = 0;
         ghostsFrightened = false;
@@ -176,11 +167,9 @@ public class GameManager : MonoBehaviour
         OnGameTimeChanged?.Invoke(gameTime);
         OnGhostsFrightenedChanged?.Invoke(ghostsFrightened);
         
-        // 延迟启动倒计时，确保UI已准备好
         StartCoroutine(StartCountdownDelayed());
     }
 
-    // 减少生命值
     public void LoseLife()
     {
         if (currentLives > 0)
@@ -195,14 +184,12 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // 增加分数
     public void AddScore(int amount)
     {
         currentScore += amount;
         OnScoreChanged?.Invoke(currentScore);
     }
 
-    // 设置幽灵恐惧状态
     public void SetGhostsFrightened(bool frightened, float duration = 10f)
     {
         ghostsFrightened = frightened;
@@ -219,42 +206,34 @@ public class GameManager : MonoBehaviour
         OnGhostsFrightenedChanged?.Invoke(ghostsFrightened);
     }
 
-    // 游戏结束
     public void GameOver()
     {
         isGameRunning = false;
-        Debug.Log("Game Over! Final Score: " + currentScore);
+        //Debug.Log("Game Over! Final Score: " + currentScore);
         
-        // 显示Game Over UI
         HUDController hudController = FindObjectOfType<HUDController>();
         if (hudController != null)
         {
             hudController.ShowGameOver();
         }
         
-        // 保存最高分和时间
         SaveHighScore();
         
-        // 延迟3秒后返回开始场景
         StartCoroutine(ReturnToStartSceneDelayed());
     }
     
-    // 检查是否所有豆子都被吃完
     public void CheckAllPelletsEaten()
     {
-        // 使用LayerMask检查普通豆子（Layer 8: Pellet）
         GameObject[] pellets = FindGameObjectsByLayer(8);
-        // 使用LayerMask检查能量豆（Layer 10: PowerPill）
         GameObject[] powerPills = FindGameObjectsByLayer(10);
         
         if (pellets.Length == 0 && powerPills.Length == 0)
         {
-            Debug.Log("所有豆子都被吃完了！游戏胜利！");
+            //Debug.Log("win the game");
             GameOver();
         }
     }
     
-    // 根据Layer查找GameObject
     private GameObject[] FindGameObjectsByLayer(int layer)
     {
         GameObject[] allObjects = FindObjectsOfType<GameObject>();
@@ -271,58 +250,49 @@ public class GameManager : MonoBehaviour
         return layerObjects.ToArray();
     }
     
-    // 延迟返回开始场景
     private System.Collections.IEnumerator ReturnToStartSceneDelayed()
     {
         yield return new WaitForSeconds(3f);
         ReturnToStartScene();
     }
 
-    // 返回开始场景
     public void ReturnToStartScene()
     {
-        Debug.Log("GameManager: 正在加载StartScene...");
+        //Debug.Log("GameManager: loading StartScene...");
         SceneManager.LoadScene("StartScene");
     }
     
-    // 延迟启动倒计时
     private System.Collections.IEnumerator StartCountdownDelayed()
     {
-        // 等待几帧确保所有UI组件都已初始化
         yield return new WaitForSeconds(0.1f);
         
         StartCountdown();
     }
     
-    // 开始倒计时
     private void StartCountdown()
     {
         isCountdownActive = true;
         countdownValue = 3;
         countdownTimer = 0f;
         
-        // 立即显示"3"
         OnCountdownChanged?.Invoke(countdownValue);
     }
     
-    // 倒计时完成
     private void FinishCountdown()
     {
         isCountdownActive = false;
         isGameRunning = true;
-        isGameTimerActive = true; // 开始游戏计时器
+        isGameTimerActive = true;
         OnCountdownFinished?.Invoke();
     }
     
 
-    // 音频相关方法
     public void EnterScared()
     {
         if (AudioManager.Instance == null)
             return;
         AudioManager.Instance.SwitchToScaredBGM();
         
-        // 设置所有幽灵为恐惧状态
         SetAllGhostsState("IsScared", true);
     }
 
@@ -331,7 +301,6 @@ public class GameManager : MonoBehaviour
         if (AudioManager.Instance == null)
             return;
         
-        // 检查是否有幽灵处于Dead状态
         GhostController[] ghosts = FindObjectsByType<GhostController>(FindObjectsSortMode.None);
         bool hasDeadGhost = false;
         
@@ -344,38 +313,33 @@ public class GameManager : MonoBehaviour
             }
         }
         
-        // 只有当没有Dead幽灵时，才切换BGM
         if (!hasDeadGhost)
         {
             AudioManager.Instance.SwitchBackToNormalBGM();
-            Debug.Log("GameManager: Scared结束，切换到Normal BGM");
+            Debug.Log("GameManager: Scared end, switch to Normal BGM");
         }
         else
         {
-            Debug.Log("GameManager: Scared结束，但仍有Dead幽灵，保持Dead BGM");
+            Debug.Log("GameManager: Scared end, have Dead ghost, keep Dead BGM");
         }
         
-        // 重置所有幽灵状态为正常（Dead幽灵会被SetAllGhostsState跳过）
         SetAllGhostsState("IsNormal", true);
         SetAllGhostsState("IsScared", false);
         SetAllGhostsState("IsRecovering", false);
         SetAllGhostsState("IsDead", false);
     }
     
-    // 设置所有幽灵的动画状态
     private void SetAllGhostsState(string stateName, bool value)
     {
         GhostController[] ghosts = FindObjectsByType<GhostController>(FindObjectsSortMode.None);
         
         foreach (GhostController ghost in ghosts)
         {
-            // 跳过Dead状态的幽灵（它们正在返回初始位置，不应被打断）
             if (ghost.GetCurrentState() == GhostController.GhostState.Dead)
             {
                 continue;
             }
             
-            // 根据状态名称调用对应的SetGhostState方法
             if (stateName == "IsScared" && value)
             {
                 ghost.SetGhostState(GhostController.GhostState.Scared);
@@ -394,7 +358,6 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                // 直接设置Animator参数（用于false值）
                 Animator animator = ghost.animator != null ? ghost.animator : ghost.GetComponentInChildren<Animator>();
                 if (animator != null)
                 {
@@ -404,7 +367,6 @@ public class GameManager : MonoBehaviour
         }
     }
     
-    // 检查是否在恢复状态
     private bool IsInRecoveringState()
     {
         GhostController[] ghosts = FindObjectsByType<GhostController>(FindObjectsSortMode.None);
@@ -428,22 +390,21 @@ public class GameManager : MonoBehaviour
 
     public void ExitGhostDie()
     {
-        Debug.Log("GameManager: ExitGhostDie() 被调用");
+        //Debug.Log("GameManager: ExitGhostDie() called");
         
         if (AudioManager.Instance == null)
         {
-            Debug.LogWarning("GameManager: AudioManager.Instance 为空，无法切换BGM");
+            //Debug.LogWarning("GameManager: AudioManager.Instance is null, cannot switch BGM");
             return;
         }
         
-        // 检查是否还有其他幽灵处于Dead状态
         GhostController[] ghosts = FindObjectsByType<GhostController>(FindObjectsSortMode.None);
         bool hasDeadGhost = false;
         
         foreach (GhostController ghost in ghosts)
         {
             GhostController.GhostState state = ghost.GetCurrentState();
-            Debug.Log($"GameManager: 检查幽灵 {ghost.ghostNumber}，状态={state}");
+            //Debug.Log($"GameManager: check ghost {ghost.ghostNumber}, state={state}");
             
             if (state == GhostController.GhostState.Dead)
             {
@@ -452,30 +413,27 @@ public class GameManager : MonoBehaviour
             }
         }
         
-        Debug.Log($"GameManager: hasDeadGhost={hasDeadGhost}, ghostsFrightened={ghostsFrightened}");
+        //Debug.Log($"GameManager: hasDeadGhost={hasDeadGhost}, ghostsFrightened={ghostsFrightened}");
         
-        // 只有当没有幽灵处于Dead状态时，才恢复正常BGM
         if (!hasDeadGhost)
         {
-            // 如果幽灵仍然处于Scared/Recovering状态，切换到Scared BGM
             if (ghostsFrightened)
             {
                 AudioManager.Instance.SwitchToScaredBGM();
-                Debug.Log("GameManager: 所有幽灵重生，恢复Scared BGM");
+                //Debug.Log("GameManager: all ghosts respawn, switch to Scared BGM");
             }
             else
             {
                 AudioManager.Instance.SwitchBackToNormalBGM();
-                Debug.Log("GameManager: 所有幽灵重生，恢复Normal BGM");
+                //Debug.Log("GameManager: all ghosts respawn, switch to Normal BGM");
             }
         }
         else
         {
-            Debug.Log("GameManager: 仍有Dead幽灵，保持Dead BGM");
+            Debug.Log("GameManager: still have Dead ghost, keep Dead BGM");
         }
     }
 
-    // 获取当前状态
     public int GetCurrentLives() => currentLives;
     public int GetCurrentScore() => currentScore;
     public float GetGameTime() => gameTime;
@@ -483,29 +441,25 @@ public class GameManager : MonoBehaviour
     public bool AreGhostsFrightened() => ghostsFrightened;
     public float GetFrightenedTimer() => frightenedTimer;
     
-    // 倒计时相关方法
     public bool IsCountdownActive() => isCountdownActive;
     public int GetCountdownValue() => countdownValue;
     
-    // 最高分相关方法
     public void SaveHighScore()
     {
-        // 保存Level 1的最高分（当前关卡）
         int level1HighScore = PlayerPrefs.GetInt("Level1_HighScore", 0);
         float level1BestTime = PlayerPrefs.GetFloat("Level1_BestTime", float.MaxValue);
         
-        // 如果当前分数更高，或者分数相同但时间更短
         if (currentScore > level1HighScore || 
             (currentScore == level1HighScore && gameTime < level1BestTime))
         {
             PlayerPrefs.SetInt("Level1_HighScore", currentScore);
             PlayerPrefs.SetFloat("Level1_BestTime", gameTime);
             PlayerPrefs.Save();
-            Debug.Log($"新的Level 1最高分！分数: {currentScore}, 时间: {gameTime:F2}秒");
+            Debug.Log($"new Level 1 highest score! score: {currentScore}, time: {gameTime:F2} seconds");
         }
         else
         {
-            Debug.Log($"未打破Level 1记录。当前: {currentScore}, 最高: {level1HighScore}");
+            Debug.Log($"not break Level 1 record. current: {currentScore}, highest: {level1HighScore}");
         }
     }
     
@@ -519,7 +473,6 @@ public class GameManager : MonoBehaviour
         return PlayerPrefs.GetFloat("Level1_BestTime", 0f);
     }
     
-    // 游戏计时器控制方法
     public void PauseGameTimer()
     {
         isGameTimerActive = false;

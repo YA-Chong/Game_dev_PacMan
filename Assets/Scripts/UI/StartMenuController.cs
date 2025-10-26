@@ -16,18 +16,15 @@ public class StartMenuController : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log("StartMenuController Start() 被调用");
+        //Debug.Log("StartMenuController Start() called");
         
-        // 初始化高分显示
         UpdateHighScoreDisplay();
         
-        // 确保有GameManager
         if (GameManager.Instance == null)
         {
             InstantiateGameManager();
         }
         
-        // 绑定按钮事件
         if (level1Button != null)
             level1Button.onClick.AddListener(StartLevel01);
             
@@ -40,7 +37,6 @@ public class StartMenuController : MonoBehaviour
     
     private void OnDestroy()
     {
-        // 清理事件绑定
         if (level1Button != null)
             level1Button.onClick.RemoveListener(StartLevel01);
             
@@ -58,7 +54,6 @@ public class StartMenuController : MonoBehaviour
     
     public void StartLevel02()
     {
-        // 先检查Level02是否存在，避免错误
         if (Application.CanStreamedLevelBeLoaded("Level02"))
         {
             SceneManager.LoadScene("Level02", LoadSceneMode.Single);
@@ -72,17 +67,14 @@ public class StartMenuController : MonoBehaviour
 
     public void UpdateHighScoreDisplay()
     {
-        // 从PlayerPrefs加载Level 1的最高分数据
         int level1HighScore = PlayerPrefs.GetInt("Level1_HighScore", 0);
         float level1BestTime = PlayerPrefs.GetFloat("Level1_BestTime", 0f);
         
-        // 格式化时间显示 (mm:ss:msms)
         string level1TimeString = FormatTime(level1BestTime);
         
         if (highScoreTextLevel1 != null)
             highScoreTextLevel1.text = $"Best: {level1HighScore:D6} - {level1TimeString}";
             
-        // 隐藏Level 2的最高分显示（因为不做100%）
         if (highScoreTextLevel2 != null)  
             highScoreTextLevel2.gameObject.SetActive(false);
     }

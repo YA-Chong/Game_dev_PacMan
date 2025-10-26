@@ -9,22 +9,18 @@ public class CountdownController : MonoBehaviour
     
     private void Start()
     {
-        // 初始隐藏
         HideCountdown();
         
-        // 立即订阅事件
         SubscribeToEvents();
     }
     
     private void SubscribeToEvents()
     {
-        // 订阅倒计时事件
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnCountdownChanged += UpdateCountdown;
             GameManager.Instance.OnCountdownFinished += HideCountdown;
             
-            // 检查是否已经有倒计时在进行
             if (GameManager.Instance.IsCountdownActive())
             {
                 UpdateCountdown(GameManager.Instance.GetCountdownValue());
@@ -32,13 +28,12 @@ public class CountdownController : MonoBehaviour
         }
         else
         {
-            Debug.LogError("CountdownController: GameManager.Instance为null，无法订阅事件");
+            Debug.LogError("CountdownController: GameManager.Instance is null, cannot subscribe to events");
         }
     }
     
     private void OnDestroy()
     {
-        // 取消订阅
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnCountdownChanged -= UpdateCountdown;
@@ -57,7 +52,6 @@ public class CountdownController : MonoBehaviour
             countdownText.text = "GO!";
         }
         
-        // 显示倒计时UI
         countdownOverlay.SetActive(true);
         countdownText.gameObject.SetActive(true);
     }
