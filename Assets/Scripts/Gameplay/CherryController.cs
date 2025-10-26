@@ -19,12 +19,8 @@ public class CherryController : MonoBehaviour
     
     void Start()
     {
-        //Debug.Log("CherryController Start() 被调用");
-        //Debug.Log($"BeanL对象状态: {gameObject.activeInHierarchy}");
-        
         // 强制启用BeanL对象
         gameObject.SetActive(true);
-        //Debug.Log($"强制启用后BeanL状态: {gameObject.activeInHierarchy}");
         
         // 设置渲染顺序，确保Cherry在最上层
         SpriteRenderer renderer = GetComponent<SpriteRenderer>();
@@ -38,21 +34,16 @@ public class CherryController : MonoBehaviour
         
         // 初始时隐藏Cherry（但保持对象启用）
         GetComponent<SpriteRenderer>().enabled = false;
-        //Debug.Log("Cherry初始状态：隐藏");
     }
     
     void Update()
     {
-        //Debug.Log("CherryController Update() 被调用");
-        
         // 生成计时器
         if (!hasSpawned)
         {
             spawnTimer -= Time.deltaTime;
-            //Debug.Log($"等待生成Cherry，剩余时间: {spawnTimer:F1}秒");
             if (spawnTimer <= 0f)
             {
-                //Debug.Log("5秒到了，开始生成Cherry");
                 SpawnCherry();
             }
         }
@@ -76,15 +67,12 @@ public class CherryController : MonoBehaviour
         // 显示Cherry（启用SpriteRenderer）
         SpriteRenderer renderer = GetComponent<SpriteRenderer>();
         renderer.enabled = true;
-        //Debug.Log($"SpriteRenderer启用状态: {renderer.enabled}");
         
         // 开始移动
         isMoving = true;
         moveProgress = 0f;
         hasSpawned = true;
         hasEnteredCameraView = false;
-        
-        //Debug.Log($"Cherry生成在位置: {startPosition}");
     }
     
     // 设置随机起始位置
@@ -110,7 +98,6 @@ public class CherryController : MonoBehaviour
         }
         
         transform.position = startPosition;
-        //Debug.Log($"Cherry在蒙版外生成: {startPosition}");
     }
     
     // 设置中心点和目标位置
@@ -144,8 +131,6 @@ public class CherryController : MonoBehaviour
             float ratio = (0f - startPosition.y) / (20f - startPosition.y);
             endPosition = new Vector3(startPosition.x + (0f - startPosition.x) / ratio, 20f, startPosition.z);
         }
-        
-        //Debug.Log($"Cherry目标位置: {endPosition}");
     }
     
     // 移动Cherry
@@ -167,7 +152,6 @@ public class CherryController : MonoBehaviour
         if (!hasEnteredCameraView && IsInsideCameraView())
         {
             hasEnteredCameraView = true;
-            ////Debug.Log("Cherry首次进入屏幕");
         }
 
         // 销毁条件：
@@ -202,15 +186,6 @@ public class CherryController : MonoBehaviour
         bool isOut = pos.x < leftBound || pos.x > rightBound || 
                      pos.y < bottomBound || pos.y > topBound;
         
-        // 详细调试信息
-        if (isOut)
-        {
-            //Debug.Log($"Cherry移出视野: 位置({pos.x:F1}, {pos.y:F1})");
-            //Debug.Log($"摄像机位置: ({mainCamera.transform.position.x:F1}, {mainCamera.transform.position.y:F1})");
-            //Debug.Log($"摄像机尺寸: {cameraWidth:F1} x {cameraHeight:F1}");
-            //Debug.Log($"边界: L:{leftBound:F1} R:{rightBound:F1} B:{bottomBound:F1} T:{topBound:F1}");
-        }
-        
         return isOut;
     }
 
@@ -235,8 +210,6 @@ public class CherryController : MonoBehaviour
     // 销毁Cherry
     private void DestroyCherry()
     {
-        //Debug.Log("Cherry移出摄像机视野，销毁");
-        
         // 重置状态，准备重新生成
         hasSpawned = false;
         spawnTimer = 5f; // 5秒后重新生成
@@ -247,8 +220,6 @@ public class CherryController : MonoBehaviour
         // 隐藏Cherry并重置位置
         GetComponent<SpriteRenderer>().enabled = false;
         transform.position = Vector3.zero; // 重置到原点
-        
-        //Debug.Log("Cherry重置，5秒后重新生成");
     }
     
     // 重置樱桃（被拾取时调用）
@@ -264,8 +235,6 @@ public class CherryController : MonoBehaviour
         // 隐藏Cherry并重置位置
         GetComponent<SpriteRenderer>().enabled = false;
         transform.position = Vector3.zero; // 重置到原点
-        
-        //Debug.Log("Cherry被拾取，重置状态，5秒后重新生成");
     }
     
     // 设置碰撞体

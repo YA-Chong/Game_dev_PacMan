@@ -249,27 +249,6 @@ public class GameManager : MonoBehaviour
         // 使用LayerMask检查能量豆（Layer 10: PowerPill）
         GameObject[] powerPills = FindGameObjectsByLayer(10);
         
-        // Debug.Log($"检查豆子：普通豆子剩余 {pellets.Length} 个，能量豆剩余 {powerPills.Length} 个");
-        
-        // 显示剩余的豆子对象名称
-        // if (pellets.Length > 0)
-        // {
-        //     Debug.Log("剩余的普通豆子：");
-        //     foreach (GameObject pellet in pellets)
-        //     {
-        //         Debug.Log($"- {pellet.name} (位置: {pellet.transform.position})");
-        //     }
-        // }
-        
-        // if (powerPills.Length > 0)
-        // {
-        //     Debug.Log("剩余的能量豆：");
-        //     foreach (GameObject powerPill in powerPills)
-        //     {
-        //         Debug.Log($"- {powerPill.name} (位置: {powerPill.transform.position})");
-        //     }
-        // }
-        
         if (pellets.Length == 0 && powerPills.Length == 0)
         {
             Debug.Log("所有豆子都被吃完了！游戏胜利！");

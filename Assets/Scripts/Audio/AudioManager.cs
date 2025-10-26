@@ -22,7 +22,6 @@ public class AudioManager : MonoBehaviour
     public AudioClip sfxPacDeath;
 
     private MusicState _currentMusicState;
-    private Coroutine _musicTransitionCoroutine;
 
     private void Awake()
     {
@@ -38,7 +37,6 @@ public class AudioManager : MonoBehaviour
 
     public enum MusicState
     {
-        None,
         LevelIntro,
         GhostNormal,
         GhostScared,
